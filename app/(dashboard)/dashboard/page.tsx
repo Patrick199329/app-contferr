@@ -1,16 +1,21 @@
+import Link from 'next/link';
 import { logout } from '@/app/(auth)/login/actions';
-import { createClient } from '@/lib/supabase/server';
+import { getCurrentProfile } from '@/lib/supabase/profile';
 
 export default async function DashboardPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const profile = await getCurrentProfile();
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-4 p-8">
       <h1 className="text-xl font-semibold">Dashboard</h1>
-      <p className="text-sm text-black/60 dark:text-white/60">Logado como {user?.email}</p>
+      <p className="text-sm text-black/60 dark:text-white/60">
+        Logado como {profile?.email} ({profile?.role})
+      </p>
+      {profile?.role === 'admin' ? (
+        <Link href="/admin" className="text-sm underline">
+          Painel Administrativo
+        </Link>
+      ) : null}
       <form action={logout}>
         <button
           type="submit"

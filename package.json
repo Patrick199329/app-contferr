@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "db:seed": "node supabase/seed-local-users.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",
