@@ -14,6 +14,9 @@ export default async function DashboardPage() {
       <Link href="/clientes" className="text-sm underline">
         Clientes
       </Link>
+      <Link href="/tarefas" className="text-sm underline">
+        Tabela de Tarefas
+      </Link>
       {profile?.role === 'admin' ? (
         <>
           <Link href="/departamentos" className="text-sm underline">
