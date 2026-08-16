@@ -15,9 +15,14 @@ export default async function DashboardPage() {
         Clientes
       </Link>
       {profile?.role === 'admin' ? (
-        <Link href="/admin" className="text-sm underline">
-          Painel Administrativo
-        </Link>
+        <>
+          <Link href="/departamentos" className="text-sm underline">
+            Departamentos
+          </Link>
+          <Link href="/admin" className="text-sm underline">
+            Painel Administrativo
+          </Link>
+        </>
       ) : null}
       <form action={logout}>
         <button
