@@ -11,6 +11,9 @@ export default async function DashboardPage() {
       <p className="text-sm text-black/60 dark:text-white/60">
         Logado como {profile?.email} ({profile?.role})
       </p>
+      <Link href="/clientes" className="text-sm underline">
+        Clientes
+      </Link>
       {profile?.role === 'admin' ? (
         <Link href="/admin" className="text-sm underline">
           Painel Administrativo
