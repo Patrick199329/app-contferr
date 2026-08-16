@@ -26,6 +26,17 @@ export function TarefasTable({
   competencia,
 }: TarefasTableProps) {
   const [q, setQ] = useState('');
+  const [lastEdits, setLastEdits] = useState<Record<string, string>>(() => {
+    const initial: Record<string, string> = {};
+    for (const [clienteId, tarefa] of Object.entries(tarefasPorCliente)) {
+      if (tarefa?.updated_at) initial[clienteId] = tarefa.updated_at;
+    }
+    return initial;
+  });
+
+  function marcarEditado(clienteId: string) {
+    setLastEdits((prev) => ({ ...prev, [clienteId]: new Date().toISOString() }));
+  }
 
   const filtrados = useMemo(() => {
     const termo = q.trim().toLowerCase();
@@ -63,6 +74,7 @@ export function TarefasTable({
           <tbody>
             {filtrados.map((cliente) => {
               const tarefa = tarefasPorCliente[cliente.id];
+              const lastEdit = lastEdits[cliente.id];
               return (
                 <tr key={cliente.id} className="border-b border-black/5 dark:border-white/5">
                   <td className="p-2 font-medium whitespace-nowrap">{cliente.nome_fantasia}</td>
@@ -77,11 +89,12 @@ export function TarefasTable({
                         opcoes={opcoesPorColuna[coluna.id] ?? []}
                         profiles={profiles}
                         initialValue={tarefa?.valores?.[coluna.id] ?? ''}
+                        onSaved={() => marcarEditado(cliente.id)}
                       />
                     </td>
                   ))}
                   <td className="p-2 text-xs whitespace-nowrap text-black/50 dark:text-white/50">
-                    {tarefa?.updated_at ? new Date(tarefa.updated_at).toLocaleString('pt-BR') : '—'}
+                    {lastEdit ? new Date(lastEdit).toLocaleString('pt-BR') : '—'}
                   </td>
                 </tr>
               );

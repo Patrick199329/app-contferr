@@ -13,6 +13,7 @@ type TarefaCellProps = {
   opcoes?: string[];
   profiles?: { id: string; email: string }[];
   initialValue: string;
+  onSaved?: () => void;
 };
 
 export function TarefaCell({
@@ -24,6 +25,7 @@ export function TarefaCell({
   opcoes = [],
   profiles = [],
   initialValue,
+  onSaved,
 }: TarefaCellProps) {
   const [value, setValue] = useState(initialValue);
   const [dirty, setDirty] = useState(false);
@@ -36,6 +38,7 @@ export function TarefaCell({
       try {
         await updateTarefaValor(clienteId, departamentoId, competencia, colunaId, newValue);
         setDirty(false);
+        onSaved?.();
       } catch {
         setError('Erro ao salvar');
       }
