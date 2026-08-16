@@ -1,0 +1,24 @@
+import { logout } from '@/app/(auth)/login/actions';
+import { createClient } from '@/lib/supabase/server';
+
+export default async function DashboardPage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  return (
+    <main className="flex min-h-screen flex-col items-center justify-center gap-4 p-8">
+      <h1 className="text-xl font-semibold">Dashboard</h1>
+      <p className="text-sm text-black/60 dark:text-white/60">Logado como {user?.email}</p>
+      <form action={logout}>
+        <button
+          type="submit"
+          className="rounded border border-black/15 px-4 py-2 text-sm font-medium dark:border-white/20"
+        >
+          Sair
+        </button>
+      </form>
+    </main>
+  );
+}
