@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { TarefasTable } from '@/components/tarefas-table';
 import { currentCompetencia, formatCompetencia } from '@/lib/competencia';
+import { getDepartamentosPermitidos, podeAcessarDepartamento } from '@/lib/supabase/permissoes';
 import { getCurrentProfile } from '@/lib/supabase/profile';
 import { createClient } from '@/lib/supabase/server';
 import type { Cliente } from '@/types/cliente';
@@ -18,20 +19,27 @@ export default async function TarefasPage({ searchParams }: TarefasPageProps) {
 
   const supabase = await createClient();
 
-  const { data: departamentos } = await supabase
+  const { data: todosDepartamentos } = await supabase
     .from('departamentos')
     .select('*')
     .eq('status', 'ativo')
     .order('ordem')
     .returns<Departamento[]>();
 
-  if (!departamentos || departamentos.length === 0) {
+  const permitidos = await getDepartamentosPermitidos();
+  const departamentos = (todosDepartamentos ?? []).filter((d) =>
+    podeAcessarDepartamento(permitidos, d.id),
+  );
+
+  if (departamentos.length === 0) {
     return (
       <main className="mx-auto flex max-w-2xl flex-col gap-4 p-8">
         <h1 className="text-xl font-semibold">Tabela de Tarefas</h1>
         <p className="text-sm text-black/60 dark:text-white/60">
-          Nenhum departamento cadastrado ainda.
-          {profile.role === 'admin' ? (
+          {(todosDepartamentos ?? []).length === 0
+            ? 'Nenhum departamento cadastrado ainda.'
+            : 'Você ainda não tem acesso a nenhum departamento. Fale com o Administrador.'}
+          {profile.role === 'admin' && (todosDepartamentos ?? []).length === 0 ? (
             <>
               {' '}
               <Link href="/departamentos/novo" className="underline">

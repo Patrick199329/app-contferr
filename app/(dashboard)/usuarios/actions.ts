@@ -112,3 +112,27 @@ export async function setUsuarioStatus(id: string, status: 'ativo' | 'inativo') 
 
   revalidatePath('/usuarios');
 }
+
+export async function toggleDepartamentoPermissao(
+  usuarioId: string,
+  departamentoId: string,
+  conceder: boolean,
+) {
+  await requireAdmin();
+
+  const supabase = await createClient();
+
+  if (conceder) {
+    await supabase
+      .from('permissoes')
+      .insert({ usuario_id: usuarioId, departamento_id: departamentoId });
+  } else {
+    await supabase
+      .from('permissoes')
+      .delete()
+      .eq('usuario_id', usuarioId)
+      .eq('departamento_id', departamentoId);
+  }
+
+  revalidatePath(`/usuarios/${usuarioId}/permissoes`);
+}

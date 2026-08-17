@@ -57,6 +57,11 @@ export default async function UsuariosPage({ searchParams }: UsuariosPageProps) 
               <Link href={`/usuarios/${u.id}/editar`} className="text-sm underline">
                 Editar
               </Link>
+              {u.role === 'usuario_final' ? (
+                <Link href={`/usuarios/${u.id}/permissoes`} className="text-sm underline">
+                  Permissões
+                </Link>
+              ) : null}
               <form
                 action={async () => {
                   'use server';
