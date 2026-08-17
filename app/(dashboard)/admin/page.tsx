@@ -19,10 +19,10 @@ export default async function AdminPage() {
         <Link href="/usuarios" className="text-sm underline">
           Usuários e permissões
         </Link>
+        <Link href="/admin/virada" className="text-sm underline">
+          Virada Mensal
+        </Link>
       </div>
-      <p className="text-sm text-black/60 dark:text-white/60">
-        Configuração de permissões por usuário e gestão de listas de opções chegam na Fase 3.2/3.3.
-      </p>
     </main>
   );
 }
