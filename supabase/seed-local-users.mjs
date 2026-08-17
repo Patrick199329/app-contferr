@@ -13,9 +13,9 @@ const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
 });
 
 const users = [
-  { email: 'admin@contferr.local', role: 'admin' },
-  { email: 'usuario1@contferr.local', role: 'usuario_final' },
-  { email: 'usuario2@contferr.local', role: 'usuario_final' },
+  { email: 'admin@contferr.local', role: 'admin', nome: 'Admin Contferr' },
+  { email: 'usuario1@contferr.local', role: 'usuario_final', nome: 'Usuário Final 1' },
+  { email: 'usuario2@contferr.local', role: 'usuario_final', nome: 'Usuário Final 2' },
 ];
 
 for (const u of users) {
@@ -23,6 +23,7 @@ for (const u of users) {
     email: u.email,
     password: DEV_PASSWORD,
     email_confirm: true,
+    user_metadata: { nome: u.nome },
   });
 
   if (error) {

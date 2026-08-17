@@ -11,7 +11,7 @@ type TarefasTableProps = {
   colunas: Coluna[];
   opcoesPorColuna: Record<string, string[]>;
   tarefasPorCliente: Record<string, Tarefa | undefined>;
-  profiles: { id: string; email: string }[];
+  profiles: { id: string; email: string; nome: string }[];
   departamentoId: string;
   competencia: string;
 };

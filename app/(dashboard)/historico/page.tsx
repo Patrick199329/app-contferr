@@ -14,11 +14,12 @@ type HistoricoPageProps = {
 function resolveDisplayValue(
   tipo: Coluna['tipo'],
   valor: string | null | undefined,
-  profiles: { id: string; email: string }[],
+  profiles: { id: string; email: string; nome: string }[],
 ): string {
   if (!valor) return '—';
   if (tipo === 'responsavel') {
-    return profiles.find((p) => p.id === valor)?.email ?? valor;
+    const p = profiles.find((p) => p.id === valor);
+    return p ? p.nome || p.email : valor;
   }
   if (tipo === 'data') {
     const [ano, mes, dia] = valor.split('-');
@@ -75,7 +76,7 @@ export default async function HistoricoPage({ searchParams }: HistoricoPageProps
       .eq('departamento_id', departamentoAtual.id)
       .order('ordem')
       .returns<Coluna[]>(),
-    supabase.from('profiles').select('id, email'),
+    supabase.from('profiles').select('id, email, nome'),
   ]);
 
   const clientesOrdenados = [...(clientes ?? [])].sort((a, b) =>

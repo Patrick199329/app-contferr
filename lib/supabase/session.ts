@@ -34,6 +34,25 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const isPublicRoute = PUBLIC_ROUTES.some((route) => request.nextUrl.pathname.startsWith(route));
+  const isAdminRoute = ADMIN_ROUTES.some((route) => request.nextUrl.pathname.startsWith(route));
+
+  let profile: { role: string; status: string } | null = null;
+  if (user) {
+    const { data } = await supabase.from('profiles').select('role, status').eq('id', user.id).single();
+    profile = data;
+  }
+
+  // Usuário desativado pelo Admin perde o acesso na próxima requisição,
+  // mesmo com uma sessão ainda válida no navegador.
+  if (user && profile?.status === 'inativo') {
+    await supabase.auth.signOut();
+    if (!isPublicRoute) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/login';
+      return NextResponse.redirect(url);
+    }
+    return supabaseResponse;
+  }
 
   if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone();
@@ -47,20 +66,10 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  const isAdminRoute = ADMIN_ROUTES.some((route) => request.nextUrl.pathname.startsWith(route));
-
-  if (user && isAdminRoute) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    if (profile?.role !== 'admin') {
-      const url = request.nextUrl.clone();
-      url.pathname = '/dashboard';
-      return NextResponse.redirect(url);
-    }
+  if (user && isAdminRoute && profile?.role !== 'admin') {
+    const url = request.nextUrl.clone();
+    url.pathname = '/dashboard';
+    return NextResponse.redirect(url);
   }
 
   return supabaseResponse;

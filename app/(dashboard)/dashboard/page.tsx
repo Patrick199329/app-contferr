@@ -25,6 +25,9 @@ export default async function DashboardPage() {
           <Link href="/departamentos" className="text-sm underline">
             Departamentos
           </Link>
+          <Link href="/usuarios" className="text-sm underline">
+            Usuários
+          </Link>
           <Link href="/admin" className="text-sm underline">
             Painel Administrativo
           </Link>

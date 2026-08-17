@@ -16,10 +16,21 @@ export async function login(_prevState: LoginState, formData: FormData): Promise
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
     return { error: 'E-mail ou senha inválidos.' };
+  }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('status')
+    .eq('id', data.user.id)
+    .single();
+
+  if (profile?.status === 'inativo') {
+    await supabase.auth.signOut();
+    return { error: 'Este usuário foi desativado. Fale com o Administrador.' };
   }
 
   redirect('/dashboard');

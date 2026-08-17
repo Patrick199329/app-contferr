@@ -11,7 +11,7 @@ type TarefaCellProps = {
   colunaId: string;
   tipo: ColunaTipo;
   opcoes?: string[];
-  profiles?: { id: string; email: string }[];
+  profiles?: { id: string; email: string; nome: string }[];
   initialValue: string;
   onSaved?: () => void;
 };
@@ -106,7 +106,7 @@ export function TarefaCell({
         <option value=""></option>
         {profiles.map((p) => (
           <option key={p.id} value={p.id}>
-            {p.email}
+            {p.nome || p.email}
           </option>
         ))}
       </select>

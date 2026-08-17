@@ -72,7 +72,7 @@ export default async function TarefasPage({ searchParams }: TarefasPageProps) {
         .eq('departamento_id', departamentoAtual.id)
         .eq('competencia', competencia)
         .returns<Tarefa[]>(),
-      supabase.from('profiles').select('id, email').order('email'),
+      supabase.from('profiles').select('id, email, nome').order('nome'),
     ]);
 
   const colunasComOpcoes = (colunas ?? []).filter(
