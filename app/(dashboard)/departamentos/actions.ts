@@ -158,3 +158,75 @@ export async function moveColuna(departamentoId: string, id: string, direction: 
 
   revalidatePath(`/departamentos/${departamentoId}`);
 }
+
+export async function createOpcao(
+  colunaId: string,
+  departamentoId: string,
+  _prevState: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  await requireAdmin();
+
+  const valor = String(formData.get('valor') ?? '').trim();
+  if (!valor) return { error: 'Informe o valor da opção.' };
+
+  const supabase = await createClient();
+  const { count } = await supabase
+    .from('opcoes_coluna')
+    .select('*', { count: 'exact', head: true })
+    .eq('coluna_id', colunaId);
+
+  const { error } = await supabase
+    .from('opcoes_coluna')
+    .insert({ coluna_id: colunaId, valor, ordem: count ?? 0 });
+
+  if (error) return { error: error.message };
+
+  revalidatePath(`/departamentos/${departamentoId}/colunas/${colunaId}/opcoes`);
+  redirect(`/departamentos/${departamentoId}/colunas/${colunaId}/opcoes`);
+}
+
+export async function setOpcaoStatus(
+  departamentoId: string,
+  colunaId: string,
+  id: string,
+  status: 'ativo' | 'inativo',
+) {
+  await requireAdmin();
+
+  const supabase = await createClient();
+  await supabase.from('opcoes_coluna').update({ status }).eq('id', id);
+
+  revalidatePath(`/departamentos/${departamentoId}/colunas/${colunaId}/opcoes`);
+}
+
+export async function moveOpcao(
+  departamentoId: string,
+  colunaId: string,
+  id: string,
+  direction: 'up' | 'down',
+) {
+  await requireAdmin();
+
+  const supabase = await createClient();
+  const { data: opcoes } = await supabase
+    .from('opcoes_coluna')
+    .select('id, ordem')
+    .eq('coluna_id', colunaId)
+    .eq('status', 'ativo')
+    .order('ordem');
+
+  if (!opcoes) return;
+
+  const index = opcoes.findIndex((o) => o.id === id);
+  const swapWith = direction === 'up' ? index - 1 : index + 1;
+  if (index === -1 || swapWith < 0 || swapWith >= opcoes.length) return;
+
+  const current = opcoes[index];
+  const target = opcoes[swapWith];
+
+  await supabase.from('opcoes_coluna').update({ ordem: target.ordem }).eq('id', current.id);
+  await supabase.from('opcoes_coluna').update({ ordem: current.ordem }).eq('id', target.id);
+
+  revalidatePath(`/departamentos/${departamentoId}/colunas/${colunaId}/opcoes`);
+}

@@ -76,6 +76,9 @@ export function TarefaCell({
       />
     );
   } else if (tipo === 'lista_opcoes' || tipo === 'status') {
+    // Se o valor já salvo referir uma opção desativada depois, mantém ele visível
+    // (marcado) mesmo fora da lista de opções selecionáveis para novos preenchimentos.
+    const opcoesExibidas = value && !opcoes.includes(value) ? [...opcoes, value] : opcoes;
     field = (
       <select
         value={value}
@@ -86,9 +89,9 @@ export function TarefaCell({
         className={inputClass}
       >
         <option value=""></option>
-        {opcoes.map((op) => (
+        {opcoesExibidas.map((op) => (
           <option key={op} value={op}>
-            {op}
+            {op === value && !opcoes.includes(op) ? `${op} (inativa)` : op}
           </option>
         ))}
       </select>

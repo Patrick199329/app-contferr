@@ -1,9 +1,15 @@
+import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { ColunaForm } from '@/components/coluna-form';
 import { SimpleTextForm } from '@/components/simple-text-form';
 import { getCurrentProfile } from '@/lib/supabase/profile';
 import { createClient } from '@/lib/supabase/server';
-import { COLUNA_TIPO_LABELS, type Coluna, type Departamento } from '@/types/departamento';
+import {
+  COLUNA_TIPOS_COM_OPCOES,
+  COLUNA_TIPO_LABELS,
+  type Coluna,
+  type Departamento,
+} from '@/types/departamento';
 import { createColuna, moveColuna, renameDepartamento, setColunaStatus } from '../actions';
 
 type DepartamentoPageProps = {
@@ -67,6 +73,14 @@ export default async function DepartamentoPage({ params }: DepartamentoPageProps
                   </span>
                 </span>
                 <div className="flex items-center gap-3">
+                  {COLUNA_TIPOS_COM_OPCOES.includes(coluna.tipo) ? (
+                    <Link
+                      href={`/departamentos/${id}/colunas/${coluna.id}/opcoes`}
+                      className="text-sm underline"
+                    >
+                      Opções
+                    </Link>
+                  ) : null}
                   {coluna.status === 'ativo' ? (
                     <>
                       <form action={moveColuna.bind(null, id, coluna.id, 'up')}>
