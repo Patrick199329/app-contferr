@@ -23,3 +23,10 @@ export function formatCompetencia(competencia: string): string {
   ];
   return `${nomes[Number(mes) - 1]}/${ano}`;
 }
+
+export function shiftCompetencia(competencia: string, deltaMeses: number): string {
+  const [ano, mes] = competencia.split('-').map(Number);
+  const date = new Date(Date.UTC(ano, mes - 1 + deltaMeses, 1));
+  const novoMes = String(date.getUTCMonth() + 1).padStart(2, '0');
+  return `${date.getUTCFullYear()}-${novoMes}-01`;
+}
