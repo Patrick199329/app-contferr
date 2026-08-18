@@ -12,13 +12,21 @@ import type { Tarefa } from '@/types/tarefa';
 
 type ClientePageProps = {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ meses?: string }>;
 };
 
-export default async function ClientePage({ params }: ClientePageProps) {
+const OPCOES_MESES = [3, 6, 12] as const;
+const MESES_PADRAO = 6;
+
+export default async function ClientePage({ params, searchParams }: ClientePageProps) {
   const profile = await getCurrentProfile();
   if (!profile) redirect('/login');
 
   const { id } = await params;
+  const { meses: mesesParam } = await searchParams;
+  const mostrarTodos = mesesParam === 'todos';
+  const meses = mostrarTodos ? null : Number(mesesParam) || MESES_PADRAO;
+
   const supabase = await createClient();
 
   const { data: cliente } = await supabase
@@ -50,9 +58,20 @@ export default async function ClientePage({ params }: ClientePageProps) {
     departamentosVisiveis.push(...(data ?? []));
   }
 
+  async function buscarTarefasDoDepartamento(departamentoId: string) {
+    const query = supabase
+      .from('tarefas')
+      .select('*')
+      .eq('cliente_id', id)
+      .eq('departamento_id', departamentoId)
+      .order('competencia', { ascending: false });
+    const { data } = await (meses !== null ? query.limit(meses) : query).returns<Tarefa[]>();
+    return data ?? [];
+  }
+
   const compilados = await Promise.all(
     departamentosVisiveis.map(async (dep) => {
-      const [{ data: colunas }, { data: tarefas }] = await Promise.all([
+      const [{ data: colunas }, tarefas] = await Promise.all([
         supabase
           .from('colunas')
           .select('*')
@@ -60,15 +79,9 @@ export default async function ClientePage({ params }: ClientePageProps) {
           .order('status')
           .order('ordem')
           .returns<Coluna[]>(),
-        supabase
-          .from('tarefas')
-          .select('*')
-          .eq('cliente_id', id)
-          .eq('departamento_id', dep.id)
-          .order('competencia', { ascending: false })
-          .returns<Tarefa[]>(),
+        buscarTarefasDoDepartamento(dep.id),
       ]);
-      return { departamento: dep, colunas: colunas ?? [], tarefas: tarefas ?? [] };
+      return { departamento: dep, colunas: colunas ?? [], tarefas };
     }),
   );
 
@@ -90,6 +103,27 @@ export default async function ClientePage({ params }: ClientePageProps) {
           </Link>
         ) : null}
       </div>
+
+      {compilados.length > 0 ? (
+        <div className="flex items-center gap-3 text-sm">
+          <span className="text-black/60 dark:text-white/60">Mostrar:</span>
+          {OPCOES_MESES.map((n) => (
+            <Link
+              key={n}
+              href={`/clientes/${id}?meses=${n}`}
+              className={!mostrarTodos && meses === n ? 'font-medium underline' : 'underline'}
+            >
+              {n} meses
+            </Link>
+          ))}
+          <Link
+            href={`/clientes/${id}?meses=todos`}
+            className={mostrarTodos ? 'font-medium underline' : 'underline'}
+          >
+            Todos
+          </Link>
+        </div>
+      ) : null}
 
       {compilados.length === 0 ? (
         <p className="text-sm text-black/60 dark:text-white/60">
