@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react';
 import { login, type LoginState } from '@/app/(auth)/login/actions';
+import { Button } from '@/components/ui/button';
 
 const initialState: LoginState = { error: null };
 
@@ -20,7 +21,7 @@ export function LoginForm() {
           type="email"
           required
           autoComplete="email"
-          className="rounded border border-black/15 px-3 py-2 dark:border-white/20"
+          className="input"
         />
       </div>
 
@@ -34,19 +35,15 @@ export function LoginForm() {
           type="password"
           required
           autoComplete="current-password"
-          className="rounded border border-black/15 px-3 py-2 dark:border-white/20"
+          className="input"
         />
       </div>
 
-      {state.error ? <p className="text-sm text-red-600">{state.error}</p> : null}
+      {state.error ? <p className="text-sm text-status-inactive">{state.error}</p> : null}
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="rounded bg-foreground px-4 py-2 text-sm font-medium text-background disabled:opacity-60"
-      >
+      <Button type="submit" disabled={pending} className="w-full">
         {pending ? 'Entrando…' : 'Entrar'}
-      </button>
+      </Button>
     </form>
   );
 }

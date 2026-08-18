@@ -42,3 +42,6 @@ next-env.d.ts
 
 # claude code local runtime state
 .claude/
+
+# material de referência visual (não é parte do produto)
+UX estudo/
