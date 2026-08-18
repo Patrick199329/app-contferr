@@ -4,6 +4,7 @@ import { currentCompetencia, formatCompetencia, shiftCompetencia } from '@/lib/c
 import { getDepartamentosPermitidos, podeAcessarDepartamento } from '@/lib/supabase/permissoes';
 import { getCurrentProfile } from '@/lib/supabase/profile';
 import { createClient } from '@/lib/supabase/server';
+import { resolveDisplayValue } from '@/lib/valores-tarefa';
 import type { Cliente } from '@/types/cliente';
 import type { Coluna, Departamento } from '@/types/departamento';
 import type { Tarefa } from '@/types/tarefa';
@@ -11,23 +12,6 @@ import type { Tarefa } from '@/types/tarefa';
 type HistoricoPageProps = {
   searchParams: Promise<{ departamento?: string; competencia?: string }>;
 };
-
-function resolveDisplayValue(
-  tipo: Coluna['tipo'],
-  valor: string | null | undefined,
-  profiles: { id: string; email: string; nome: string }[],
-): string {
-  if (!valor) return '—';
-  if (tipo === 'responsavel') {
-    const p = profiles.find((p) => p.id === valor);
-    return p ? p.nome || p.email : valor;
-  }
-  if (tipo === 'data') {
-    const [ano, mes, dia] = valor.split('-');
-    return ano && mes && dia ? `${dia}/${mes}/${ano}` : valor;
-  }
-  return valor;
-}
 
 export default async function HistoricoPage({ searchParams }: HistoricoPageProps) {
   const profile = await getCurrentProfile();

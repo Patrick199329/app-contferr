@@ -92,7 +92,9 @@ export default async function ClientesPage({ searchParams }: ClientesPageProps) 
           return (
             <li key={cliente.id} className="flex items-center justify-between py-3">
               <div>
-                <p className="font-medium">{cliente.nome_fantasia}</p>
+                <Link href={`/clientes/${cliente.id}`} className="font-medium underline">
+                  {cliente.nome_fantasia}
+                </Link>
                 <p className="text-sm text-black/60 dark:text-white/60">
                   {cliente.razao_social} — {formatCnpj(cliente.cnpj)}
                 </p>
