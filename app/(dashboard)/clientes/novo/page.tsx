@@ -39,13 +39,15 @@ export default async function NovoClientePage() {
   }
 
   return (
-    <main className="mx-auto flex max-w-md flex-col gap-6 p-8">
+    <div className="mx-auto flex max-w-md flex-col gap-6">
       <h1 className="text-xl font-semibold">Novo cliente</h1>
-      <ClienteForm
-        action={createCliente}
-        departamentosDisponiveis={departamentosDisponiveis}
-        submitLabel="Criar cliente"
-      />
-    </main>
+      <div className="app-card p-6">
+        <ClienteForm
+          action={createCliente}
+          departamentosDisponiveis={departamentosDisponiveis}
+          submitLabel="Criar cliente"
+        />
+      </div>
+    </div>
   );
 }

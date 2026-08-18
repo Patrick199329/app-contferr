@@ -55,20 +55,18 @@ export function TarefasTable({
         value={q}
         onChange={(e) => setQ(e.target.value)}
         placeholder="Buscar cliente…"
-        className="w-full max-w-sm rounded border border-black/15 px-3 py-2 text-sm dark:border-white/20"
+        className="input max-w-sm"
       />
 
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-max border-collapse text-sm">
+      <div className="app-card overflow-x-auto">
+        <table className="app-table w-full min-w-max border-collapse">
           <thead>
-            <tr className="border-b border-black/10 text-left dark:border-white/10">
-              <th className="p-2">Cliente</th>
+            <tr>
+              <th>Cliente</th>
               {colunas.map((coluna) => (
-                <th key={coluna.id} className="p-2">
-                  {coluna.nome}
-                </th>
+                <th key={coluna.id}>{coluna.nome}</th>
               ))}
-              <th className="p-2">Última edição</th>
+              <th>Última edição</th>
             </tr>
           </thead>
           <tbody>
@@ -76,10 +74,10 @@ export function TarefasTable({
               const tarefa = tarefasPorCliente[cliente.id];
               const lastEdit = lastEdits[cliente.id];
               return (
-                <tr key={cliente.id} className="border-b border-black/5 dark:border-white/5">
-                  <td className="p-2 font-medium whitespace-nowrap">{cliente.nome_fantasia}</td>
+                <tr key={cliente.id}>
+                  <td className="font-medium whitespace-nowrap">{cliente.nome_fantasia}</td>
                   {colunas.map((coluna) => (
-                    <td key={coluna.id} className="p-2">
+                    <td key={coluna.id}>
                       <TarefaCell
                         clienteId={cliente.id}
                         departamentoId={departamentoId}
@@ -93,7 +91,7 @@ export function TarefasTable({
                       />
                     </td>
                   ))}
-                  <td className="p-2 text-xs whitespace-nowrap text-black/50 dark:text-white/50">
+                  <td className="text-xs whitespace-nowrap text-muted">
                     {lastEdit ? new Date(lastEdit).toLocaleString('pt-BR') : '—'}
                   </td>
                 </tr>
@@ -101,10 +99,7 @@ export function TarefasTable({
             })}
             {filtrados.length === 0 ? (
               <tr>
-                <td
-                  colSpan={colunas.length + 2}
-                  className="p-4 text-center text-black/50 dark:text-white/50"
-                >
+                <td colSpan={colunas.length + 2} className="p-4 text-center text-muted">
                   Nenhum cliente encontrado.
                 </td>
               </tr>

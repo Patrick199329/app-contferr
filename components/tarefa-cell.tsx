@@ -46,7 +46,7 @@ export function TarefaCell({
   }
 
   const inputClass =
-    'w-full rounded border border-transparent bg-transparent px-2 py-1 hover:border-black/15 focus:border-black/30 dark:hover:border-white/20';
+    'w-full rounded-xl border border-transparent bg-transparent px-2 py-1.5 outline-none transition-colors hover:border-border focus:border-primary';
 
   let field: React.ReactNode;
 
@@ -121,8 +121,8 @@ export function TarefaCell({
   return (
     <div className="flex items-center gap-1">
       {field}
-      {isPending ? <span className="text-xs text-black/40 dark:text-white/40">…</span> : null}
-      {error ? <span className="text-xs text-red-600">{error}</span> : null}
+      {isPending ? <span className="text-xs text-muted">…</span> : null}
+      {error ? <span className="text-xs text-status-inactive">{error}</span> : null}
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react';
 import type { FormState } from '@/app/(dashboard)/usuarios/actions';
+import { Button } from '@/components/ui/button';
 import type { Role } from '@/lib/supabase/profile';
 
 type UsuarioFormProps = {
@@ -31,7 +32,7 @@ export function UsuarioForm({ action, mode, initialValues, submitLabel }: Usuari
           name="nome"
           required
           defaultValue={initialValues?.nome}
-          className="rounded border border-black/15 px-3 py-2 dark:border-white/20"
+          className="input"
         />
       </div>
 
@@ -41,13 +42,7 @@ export function UsuarioForm({ action, mode, initialValues, submitLabel }: Usuari
             <label htmlFor="email" className="text-sm font-medium">
               E-mail
             </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              required
-              className="rounded border border-black/15 px-3 py-2 dark:border-white/20"
-            />
+            <input id="email" name="email" type="email" required className="input" />
           </div>
 
           <div className="flex flex-col gap-1">
@@ -60,14 +55,14 @@ export function UsuarioForm({ action, mode, initialValues, submitLabel }: Usuari
               type="password"
               required
               minLength={8}
-              className="rounded border border-black/15 px-3 py-2 dark:border-white/20"
+              className="input"
             />
           </div>
         </>
       ) : (
         <div className="flex flex-col gap-1">
           <span className="text-sm font-medium">E-mail</span>
-          <span className="text-sm text-black/60 dark:text-white/60">{initialValues?.email}</span>
+          <span className="text-sm text-muted">{initialValues?.email}</span>
         </div>
       )}
 
@@ -79,7 +74,7 @@ export function UsuarioForm({ action, mode, initialValues, submitLabel }: Usuari
           id="role"
           name="role"
           defaultValue={initialValues?.role ?? 'usuario_final'}
-          className="rounded border border-black/15 px-3 py-2 dark:border-white/20"
+          className="input"
         >
           <option value="usuario_final">Usuário Final</option>
           <option value="gerente">Gerente</option>
@@ -87,15 +82,11 @@ export function UsuarioForm({ action, mode, initialValues, submitLabel }: Usuari
         </select>
       </div>
 
-      {state.error ? <p className="text-sm text-red-600">{state.error}</p> : null}
+      {state.error ? <p className="text-sm text-status-inactive">{state.error}</p> : null}
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="w-fit rounded bg-foreground px-4 py-2 text-sm font-medium text-background disabled:opacity-60"
-      >
+      <Button type="submit" disabled={pending}>
         {pending ? 'Salvando…' : submitLabel}
-      </button>
+      </Button>
     </form>
   );
 }

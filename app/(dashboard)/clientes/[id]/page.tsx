@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
+import { Badge } from '@/components/ui/badge';
 import { formatCnpj } from '@/lib/cnpj';
 import { formatCompetencia } from '@/lib/competencia';
 import { getDepartamentosPermitidos, podeAcessarDepartamento } from '@/lib/supabase/permissoes';
@@ -86,39 +87,39 @@ export default async function ClientePage({ params, searchParams }: ClientePageP
   );
 
   return (
-    <main className="mx-auto flex max-w-4xl flex-col gap-8 p-8">
-      <div className="flex items-center justify-between">
+    <div className="mx-auto flex max-w-4xl flex-col gap-8">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold">
             {cliente.nome_fantasia}
             {cliente.status === 'inativo' ? ' (inativo)' : ''}
           </h1>
-          <p className="text-sm text-black/60 dark:text-white/60">
+          <p className="text-sm text-muted">
             {cliente.razao_social} — {formatCnpj(cliente.cnpj)}
           </p>
         </div>
         {podeGerenciarClientes(profile) ? (
-          <Link href={`/clientes/${id}/editar`} className="text-sm underline">
+          <Link href={`/clientes/${id}/editar`} className="text-sm text-muted hover:underline">
             Editar cadastro / departamentos
           </Link>
         ) : null}
       </div>
 
       {compilados.length > 0 ? (
-        <div className="flex items-center gap-3 text-sm">
-          <span className="text-black/60 dark:text-white/60">Mostrar:</span>
+        <div className="flex items-center gap-2 text-sm">
+          <span className="text-muted">Mostrar:</span>
           {OPCOES_MESES.map((n) => (
             <Link
               key={n}
               href={`/clientes/${id}?meses=${n}`}
-              className={!mostrarTodos && meses === n ? 'font-medium underline' : 'underline'}
+              className={`rounded-full px-3 py-1.5 ${!mostrarTodos && meses === n ? 'bg-accent font-medium text-accent-foreground' : 'bg-surface-muted text-foreground/70 hover:bg-surface-muted/70'}`}
             >
               {n} meses
             </Link>
           ))}
           <Link
             href={`/clientes/${id}?meses=todos`}
-            className={mostrarTodos ? 'font-medium underline' : 'underline'}
+            className={`rounded-full px-3 py-1.5 ${mostrarTodos ? 'bg-accent font-medium text-accent-foreground' : 'bg-surface-muted text-foreground/70 hover:bg-surface-muted/70'}`}
           >
             Todos
           </Link>
@@ -126,7 +127,7 @@ export default async function ClientePage({ params, searchParams }: ClientePageP
       ) : null}
 
       {compilados.length === 0 ? (
-        <p className="text-sm text-black/60 dark:text-white/60">
+        <p className="text-sm text-muted">
           Este cliente ainda não está vinculado a nenhum departamento que você tenha acesso.
         </p>
       ) : (
@@ -134,33 +135,35 @@ export default async function ClientePage({ params, searchParams }: ClientePageP
           <div key={departamento.id} className="flex flex-col gap-3">
             <h2 className="text-lg font-medium">{departamento.nome}</h2>
             {colunas.length === 0 || tarefas.length === 0 ? (
-              <p className="text-sm text-black/60 dark:text-white/60">
+              <p className="text-sm text-muted">
                 {colunas.length === 0
                   ? 'Departamento ainda sem colunas configuradas.'
                   : 'Nenhuma tarefa registrada ainda para este cliente neste departamento.'}
               </p>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-max border-collapse text-sm">
+              <div className="app-card overflow-x-auto">
+                <table className="app-table w-full min-w-max border-collapse">
                   <thead>
-                    <tr className="border-b border-black/10 text-left dark:border-white/10">
-                      <th className="p-2">Competência</th>
+                    <tr>
+                      <th>Competência</th>
                       {colunas.map((coluna) => (
-                        <th key={coluna.id} className="p-2">
+                        <th key={coluna.id}>
                           {coluna.nome}
-                          {coluna.status === 'inativo' ? ' (inativa)' : ''}
+                          {coluna.status === 'inativo' ? (
+                            <Badge tone="neutral"> inativa</Badge>
+                          ) : null}
                         </th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {tarefas.map((tarefa) => (
-                      <tr key={tarefa.id} className="border-b border-black/5 dark:border-white/5">
-                        <td className="p-2 font-medium whitespace-nowrap">
+                      <tr key={tarefa.id}>
+                        <td className="font-medium whitespace-nowrap">
                           {formatCompetencia(tarefa.competencia)}
                         </td>
                         {colunas.map((coluna) => (
-                          <td key={coluna.id} className="p-2 text-black/80 dark:text-white/80">
+                          <td key={coluna.id} className="text-foreground/80">
                             {resolveDisplayValue(
                               coluna.tipo,
                               tarefa.valores?.[coluna.id],
@@ -177,6 +180,6 @@ export default async function ClientePage({ params, searchParams }: ClientePageP
           </div>
         ))
       )}
-    </main>
+    </div>
   );
 }

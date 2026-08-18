@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import { Badge } from '@/components/ui/badge';
+import { ButtonLink } from '@/components/ui/button';
 import { formatCnpj } from '@/lib/cnpj';
 import { getCurrentProfile, podeGerenciarClientes } from '@/lib/supabase/profile';
 import { createClient } from '@/lib/supabase/server';
@@ -49,17 +51,10 @@ export default async function ClientesPage({ searchParams }: ClientesPageProps) 
   }
 
   return (
-    <main className="mx-auto flex max-w-3xl flex-col gap-6 p-8">
+    <div className="mx-auto flex max-w-3xl flex-col gap-6">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">Clientes</h1>
-        {podeGerenciar ? (
-          <Link
-            href="/clientes/novo"
-            className="rounded bg-foreground px-4 py-2 text-sm text-background"
-          >
-            Novo cliente
-          </Link>
-        ) : null}
+        {podeGerenciar ? <ButtonLink href="/clientes/novo">Novo cliente</ButtonLink> : null}
       </div>
 
       <form className="flex gap-2">
@@ -68,12 +63,12 @@ export default async function ClientesPage({ searchParams }: ClientesPageProps) 
           name="q"
           defaultValue={q}
           placeholder="Buscar por razão social ou nome fantasia"
-          className="w-full rounded border border-black/15 px-3 py-2 text-sm dark:border-white/20"
+          className="input"
         />
         {showInativos ? <input type="hidden" name="inativos" value="1" /> : null}
         <button
           type="submit"
-          className="rounded border border-black/15 px-3 py-2 text-sm dark:border-white/20"
+          className="shrink-0 rounded-full border border-border bg-surface px-4 py-2.5 text-sm font-medium hover:bg-surface-muted"
         >
           Buscar
         </button>
@@ -81,30 +76,41 @@ export default async function ClientesPage({ searchParams }: ClientesPageProps) 
 
       <Link
         href={showInativos ? '/clientes' : '/clientes?inativos=1'}
-        className="text-sm underline"
+        className="w-fit text-sm text-muted underline"
       >
         {showInativos ? 'Ver clientes ativos' : 'Ver clientes inativos'}
       </Link>
 
-      <ul className="flex flex-col divide-y divide-black/10 dark:divide-white/10">
+      <ul className="app-card flex flex-col divide-y divide-border">
         {(clientes ?? []).map((cliente) => {
           const deps = depsPorCliente.get(cliente.id) ?? [];
           return (
-            <li key={cliente.id} className="flex items-center justify-between py-3">
-              <div>
-                <Link href={`/clientes/${cliente.id}`} className="font-medium underline">
+            <li key={cliente.id} className="flex items-center justify-between gap-4 p-4">
+              <div className="min-w-0">
+                <Link href={`/clientes/${cliente.id}`} className="font-medium hover:underline">
                   {cliente.nome_fantasia}
                 </Link>
-                <p className="text-sm text-black/60 dark:text-white/60">
+                <p className="truncate text-sm text-muted">
                   {cliente.razao_social} — {formatCnpj(cliente.cnpj)}
                 </p>
-                <p className="text-xs text-black/50 dark:text-white/50">
-                  {deps.length > 0 ? deps.join(', ') : 'Nenhum departamento vinculado'}
-                </p>
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {deps.length > 0 ? (
+                    deps.map((d) => (
+                      <Badge key={d} tone="neutral">
+                        {d}
+                      </Badge>
+                    ))
+                  ) : (
+                    <span className="text-xs text-muted">Nenhum departamento vinculado</span>
+                  )}
+                </div>
               </div>
               {podeGerenciar ? (
-                <div className="flex gap-3">
-                  <Link href={`/clientes/${cliente.id}/editar`} className="text-sm underline">
+                <div className="flex shrink-0 gap-3">
+                  <Link
+                    href={`/clientes/${cliente.id}/editar`}
+                    className="text-sm text-muted hover:underline"
+                  >
                     Editar
                   </Link>
                   <form
@@ -113,7 +119,7 @@ export default async function ClientesPage({ searchParams }: ClientesPageProps) 
                       await setClienteStatus(cliente.id, showInativos ? 'ativo' : 'inativo');
                     }}
                   >
-                    <button type="submit" className="text-sm underline">
+                    <button type="submit" className="text-sm text-muted hover:underline">
                       {showInativos ? 'Reativar' : 'Desativar'}
                     </button>
                   </form>
@@ -123,11 +129,9 @@ export default async function ClientesPage({ searchParams }: ClientesPageProps) 
           );
         })}
         {(clientes ?? []).length === 0 ? (
-          <li className="py-3 text-sm text-black/60 dark:text-white/60">
-            Nenhum cliente encontrado.
-          </li>
+          <li className="p-4 text-sm text-muted">Nenhum cliente encontrado.</li>
         ) : null}
       </ul>
-    </main>
+    </div>
   );
 }

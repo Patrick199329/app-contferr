@@ -27,14 +27,16 @@ export default async function EditarUsuarioPage({ params }: EditarUsuarioPagePro
   }
 
   return (
-    <main className="mx-auto flex max-w-md flex-col gap-6 p-8">
+    <div className="mx-auto flex max-w-md flex-col gap-6">
       <h1 className="text-xl font-semibold">Editar usuário</h1>
-      <UsuarioForm
-        action={updateUsuario.bind(null, id)}
-        mode="edit"
-        initialValues={{ nome: usuario.nome, email: usuario.email, role: usuario.role }}
-        submitLabel="Salvar alterações"
-      />
-    </main>
+      <div className="app-card p-6">
+        <UsuarioForm
+          action={updateUsuario.bind(null, id)}
+          mode="edit"
+          initialValues={{ nome: usuario.nome, email: usuario.email, role: usuario.role }}
+          submitLabel="Salvar alterações"
+        />
+      </div>
+    </div>
   );
 }

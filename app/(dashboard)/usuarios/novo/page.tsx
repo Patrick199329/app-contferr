@@ -10,9 +10,11 @@ export default async function NovoUsuarioPage() {
   }
 
   return (
-    <main className="mx-auto flex max-w-md flex-col gap-6 p-8">
+    <div className="mx-auto flex max-w-md flex-col gap-6">
       <h1 className="text-xl font-semibold">Novo usuário</h1>
-      <UsuarioForm action={createUsuario} mode="create" submitLabel="Criar usuário" />
-    </main>
+      <div className="app-card p-6">
+        <UsuarioForm action={createUsuario} mode="create" submitLabel="Criar usuário" />
+      </div>
+    </div>
   );
 }

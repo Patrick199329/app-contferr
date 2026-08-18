@@ -46,30 +46,32 @@ export default async function EditarClientePage({ params, searchParams }: Editar
       : new Set((minhasPermissoes ?? []).map((p) => p.departamento_id));
 
   return (
-    <main className="mx-auto flex max-w-md flex-col gap-8 p-8">
+    <div className="mx-auto flex max-w-md flex-col gap-8">
       <div className="flex flex-col gap-6">
         <h1 className="text-xl font-semibold">Editar cliente</h1>
-        {erro ? <p className="text-sm text-red-600">{erro}</p> : null}
-        <ClienteForm
-          action={updateCliente.bind(null, id)}
-          initialValues={{
-            razaoSocial: cliente.razao_social,
-            nomeFantasia: cliente.nome_fantasia,
-            cnpj: cliente.cnpj,
-          }}
-          submitLabel="Salvar alterações"
-        />
+        {erro ? <p className="text-sm text-status-inactive">{erro}</p> : null}
+        <div className="app-card p-6">
+          <ClienteForm
+            action={updateCliente.bind(null, id)}
+            initialValues={{
+              razaoSocial: cliente.razao_social,
+              nomeFantasia: cliente.nome_fantasia,
+              cnpj: cliente.cnpj,
+            }}
+            submitLabel="Salvar alterações"
+          />
+        </div>
       </div>
 
       <div className="flex flex-col gap-3">
         <h2 className="text-lg font-medium">Departamentos vinculados</h2>
-        <ul className="flex flex-col divide-y divide-black/10 dark:divide-white/10">
+        <ul className="app-card flex flex-col divide-y divide-border">
           {(departamentos ?? []).map((dep) => {
             const vinculado = departamentosVinculados.has(dep.id);
             const podeAlterar =
               departamentosQueGerencio === null || departamentosQueGerencio.has(dep.id);
             return (
-              <li key={dep.id} className="flex items-center justify-between py-2">
+              <li key={dep.id} className="flex items-center justify-between p-4">
                 <span>{dep.nome}</span>
                 {podeAlterar ? (
                   <form
@@ -79,12 +81,12 @@ export default async function EditarClientePage({ params, searchParams }: Editar
                         : linkClienteDepartamento.bind(null, id, dep.id)
                     }
                   >
-                    <button type="submit" className="text-sm underline">
+                    <button type="submit" className="text-sm text-muted hover:underline">
                       {vinculado ? 'Desvincular' : 'Vincular'}
                     </button>
                   </form>
                 ) : (
-                  <span className="text-sm text-black/50 dark:text-white/50">
+                  <span className="text-sm text-muted">
                     {vinculado ? 'Vinculado' : 'Não vinculado'}
                   </span>
                 )}
@@ -92,12 +94,10 @@ export default async function EditarClientePage({ params, searchParams }: Editar
             );
           })}
           {(departamentos ?? []).length === 0 ? (
-            <li className="py-2 text-sm text-black/60 dark:text-white/60">
-              Nenhum departamento cadastrado.
-            </li>
+            <li className="p-4 text-sm text-muted">Nenhum departamento cadastrado.</li>
           ) : null}
         </ul>
       </div>
-    </main>
+    </div>
   );
 }

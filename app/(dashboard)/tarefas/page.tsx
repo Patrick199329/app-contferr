@@ -33,9 +33,9 @@ export default async function TarefasPage({ searchParams }: TarefasPageProps) {
 
   if (departamentos.length === 0) {
     return (
-      <main className="mx-auto flex max-w-2xl flex-col gap-4 p-8">
+      <div className="mx-auto flex max-w-2xl flex-col gap-4">
         <h1 className="text-xl font-semibold">Tabela de Tarefas</h1>
-        <p className="text-sm text-black/60 dark:text-white/60">
+        <p className="text-sm text-muted">
           {(todosDepartamentos ?? []).length === 0
             ? 'Nenhum departamento cadastrado ainda.'
             : 'Você ainda não tem acesso a nenhum departamento. Fale com o Administrador.'}
@@ -49,7 +49,7 @@ export default async function TarefasPage({ searchParams }: TarefasPageProps) {
             </>
           ) : null}
         </p>
-      </main>
+      </div>
     );
   }
 
@@ -119,20 +119,20 @@ export default async function TarefasPage({ searchParams }: TarefasPageProps) {
   }
 
   return (
-    <main className="mx-auto flex max-w-5xl flex-col gap-6 p-8">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+    <div className="mx-auto flex max-w-5xl flex-col gap-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-semibold">
           Tabela de Tarefas — {formatCompetencia(competencia)}
         </h1>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {departamentos.map((dep) => (
             <Link
               key={dep.id}
               href={`/tarefas?departamento=${dep.id}`}
-              className={`rounded px-3 py-1 text-sm ${
+              className={`rounded-full px-4 py-2 text-sm font-medium ${
                 dep.id === departamentoAtual.id
-                  ? 'bg-foreground text-background'
-                  : 'border border-black/15 dark:border-white/20'
+                  ? 'bg-accent text-accent-foreground'
+                  : 'bg-surface-muted text-foreground/70 hover:bg-surface-muted/70'
               }`}
             >
               {dep.nome}
@@ -142,7 +142,7 @@ export default async function TarefasPage({ searchParams }: TarefasPageProps) {
       </div>
 
       {(colunas ?? []).length === 0 ? (
-        <p className="text-sm text-black/60 dark:text-white/60">
+        <p className="text-sm text-muted">
           Este departamento ainda não tem colunas configuradas.
           {profile.role === 'admin' ? (
             <>
@@ -165,6 +165,6 @@ export default async function TarefasPage({ searchParams }: TarefasPageProps) {
           competencia={competencia}
         />
       )}
-    </main>
+    </div>
   );
 }

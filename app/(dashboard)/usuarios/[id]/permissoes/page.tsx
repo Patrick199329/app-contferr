@@ -29,12 +29,12 @@ export default async function PermissoesPage({ params }: PermissoesPageProps) {
 
   if (usuario.role === 'admin') {
     return (
-      <main className="mx-auto flex max-w-md flex-col gap-4 p-8">
+      <div className="mx-auto flex max-w-md flex-col gap-4">
         <h1 className="text-xl font-semibold">Permissões — {usuario.nome || usuario.email}</h1>
-        <p className="text-sm text-black/60 dark:text-white/60">
+        <p className="text-sm text-muted">
           Este usuário é Administrador e já tem acesso irrestrito a todos os departamentos.
         </p>
-      </main>
+      </div>
     );
   }
 
@@ -51,9 +51,9 @@ export default async function PermissoesPage({ params }: PermissoesPageProps) {
   const liberados = new Set((permissoes ?? []).map((p) => p.departamento_id));
 
   return (
-    <main className="mx-auto flex max-w-md flex-col gap-6 p-8">
+    <div className="mx-auto flex max-w-md flex-col gap-6">
       <h1 className="text-xl font-semibold">Permissões — {usuario.nome || usuario.email}</h1>
-      <p className="text-sm text-black/60 dark:text-white/60">
+      <p className="text-sm text-muted">
         Departamentos que este usuário pode ver e editar na Tabela de Tarefas e no Histórico.
         {usuario.role === 'gerente'
           ? ' Como Gerente, também poderá criar clientes e vincular/desvincular clientes existentes nesses departamentos.'
@@ -61,14 +61,14 @@ export default async function PermissoesPage({ params }: PermissoesPageProps) {
         Efeito imediato — não precisa de logout.
       </p>
 
-      <ul className="flex flex-col divide-y divide-black/10 dark:divide-white/10">
+      <ul className="app-card flex flex-col divide-y divide-border">
         {(departamentos ?? []).map((dep) => {
           const liberado = liberados.has(dep.id);
           return (
-            <li key={dep.id} className="flex items-center justify-between py-3">
+            <li key={dep.id} className="flex items-center justify-between p-4">
               <span>{dep.nome}</span>
               <form action={toggleDepartamentoPermissao.bind(null, id, dep.id, !liberado)}>
-                <button type="submit" className="text-sm underline">
+                <button type="submit" className="text-sm text-muted hover:underline">
                   {liberado ? 'Revogar' : 'Liberar'}
                 </button>
               </form>
@@ -76,11 +76,9 @@ export default async function PermissoesPage({ params }: PermissoesPageProps) {
           );
         })}
         {(departamentos ?? []).length === 0 ? (
-          <li className="py-3 text-sm text-black/60 dark:text-white/60">
-            Nenhum departamento cadastrado ainda.
-          </li>
+          <li className="p-4 text-sm text-muted">Nenhum departamento cadastrado ainda.</li>
         ) : null}
       </ul>
-    </main>
+    </div>
   );
 }

@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { Badge } from '@/components/ui/badge';
 import { currentCompetencia, formatCompetencia, shiftCompetencia } from '@/lib/competencia';
 import { getDepartamentosPermitidos, podeAcessarDepartamento } from '@/lib/supabase/permissoes';
 import { getCurrentProfile } from '@/lib/supabase/profile';
@@ -32,14 +33,14 @@ export default async function HistoricoPage({ searchParams }: HistoricoPageProps
 
   if (departamentos.length === 0) {
     return (
-      <main className="mx-auto flex max-w-2xl flex-col gap-4 p-8">
+      <div className="mx-auto flex max-w-2xl flex-col gap-4">
         <h1 className="text-xl font-semibold">Histórico de Competências</h1>
-        <p className="text-sm text-black/60 dark:text-white/60">
+        <p className="text-sm text-muted">
           {(todosDepartamentos ?? []).length === 0
             ? 'Nenhum departamento cadastrado ainda.'
             : 'Você ainda não tem acesso a nenhum departamento. Fale com o Administrador.'}
         </p>
-      </main>
+      </div>
     );
   }
 
@@ -81,18 +82,18 @@ export default async function HistoricoPage({ searchParams }: HistoricoPageProps
   }
 
   return (
-    <main className="mx-auto flex max-w-5xl flex-col gap-6 p-8">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+    <div className="mx-auto flex max-w-5xl flex-col gap-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-semibold">Histórico — {formatCompetencia(competencia)}</h1>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {departamentos.map((dep) => (
             <Link
               key={dep.id}
               href={`/historico?departamento=${dep.id}&competencia=${competencia}`}
-              className={`rounded px-3 py-1 text-sm ${
+              className={`rounded-full px-4 py-2 text-sm font-medium ${
                 dep.id === departamentoAtual.id
-                  ? 'bg-foreground text-background'
-                  : 'border border-black/15 dark:border-white/20'
+                  ? 'bg-accent text-accent-foreground'
+                  : 'bg-surface-muted text-foreground/70 hover:bg-surface-muted/70'
               }`}
             >
               {dep.nome}
@@ -104,48 +105,48 @@ export default async function HistoricoPage({ searchParams }: HistoricoPageProps
       <div className="flex items-center gap-4 text-sm">
         <Link
           href={`/historico?departamento=${departamentoAtual.id}&competencia=${shiftCompetencia(competencia, -1)}`}
-          className="underline"
+          className="text-muted hover:underline"
         >
           ← Mês anterior
         </Link>
         {podeAvancar ? (
           <Link
             href={`/historico?departamento=${departamentoAtual.id}&competencia=${shiftCompetencia(competencia, 1)}`}
-            className="underline"
+            className="text-muted hover:underline"
           >
             Mês seguinte →
           </Link>
         ) : null}
-        <Link href="/tarefas" className="ml-auto underline">
+        <Link href="/tarefas" className="ml-auto text-muted hover:underline">
           Ver tabela do mês corrente
         </Link>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-max border-collapse text-sm">
+      <div className="app-card overflow-x-auto">
+        <table className="app-table w-full min-w-max border-collapse">
           <thead>
-            <tr className="border-b border-black/10 text-left dark:border-white/10">
-              <th className="p-2">Cliente</th>
+            <tr>
+              <th>Cliente</th>
               {(colunas ?? []).map((coluna) => (
-                <th key={coluna.id} className="p-2">
+                <th key={coluna.id}>
                   {coluna.nome}
-                  {coluna.status === 'inativo' ? ' (inativa)' : ''}
+                  {coluna.status === 'inativo' ? <Badge tone="neutral"> inativa</Badge> : null}
                 </th>
               ))}
-              <th className="p-2">Última edição</th>
+              <th>Última edição</th>
             </tr>
           </thead>
           <tbody>
             {clientesOrdenados.map((cliente) => {
               const tarefa = tarefasPorCliente[cliente.id];
               return (
-                <tr key={cliente.id} className="border-b border-black/5 dark:border-white/5">
-                  <td className="p-2 font-medium whitespace-nowrap">
+                <tr key={cliente.id}>
+                  <td className="font-medium whitespace-nowrap">
                     {cliente.nome_fantasia}
-                    {cliente.status === 'inativo' ? ' (inativo)' : ''}
+                    {cliente.status === 'inativo' ? <Badge tone="inactive"> inativo</Badge> : null}
                   </td>
                   {(colunas ?? []).map((coluna) => (
-                    <td key={coluna.id} className="p-2 text-black/80 dark:text-white/80">
+                    <td key={coluna.id} className="text-foreground/80">
                       {resolveDisplayValue(
                         coluna.tipo,
                         tarefa?.valores?.[coluna.id],
@@ -153,7 +154,7 @@ export default async function HistoricoPage({ searchParams }: HistoricoPageProps
                       )}
                     </td>
                   ))}
-                  <td className="p-2 text-xs whitespace-nowrap text-black/50 dark:text-white/50">
+                  <td className="text-xs whitespace-nowrap text-muted">
                     {tarefa?.updated_at ? new Date(tarefa.updated_at).toLocaleString('pt-BR') : '—'}
                   </td>
                 </tr>
@@ -161,10 +162,7 @@ export default async function HistoricoPage({ searchParams }: HistoricoPageProps
             })}
             {clientesOrdenados.length === 0 ? (
               <tr>
-                <td
-                  colSpan={(colunas ?? []).length + 2}
-                  className="p-4 text-center text-black/50 dark:text-white/50"
-                >
+                <td colSpan={(colunas ?? []).length + 2} className="p-4 text-center text-muted">
                   Nenhum dado registrado para esta competência.
                 </td>
               </tr>
@@ -172,6 +170,6 @@ export default async function HistoricoPage({ searchParams }: HistoricoPageProps
           </tbody>
         </table>
       </div>
-    </main>
+    </div>
   );
 }

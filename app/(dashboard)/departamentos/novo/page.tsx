@@ -10,14 +10,16 @@ export default async function NovoDepartamentoPage() {
   }
 
   return (
-    <main className="mx-auto flex max-w-md flex-col gap-6 p-8">
+    <div className="mx-auto flex max-w-md flex-col gap-6">
       <h1 className="text-xl font-semibold">Novo departamento</h1>
-      <SimpleTextForm
-        action={createDepartamento}
-        fieldName="nome"
-        label="Nome do departamento"
-        submitLabel="Criar departamento"
-      />
-    </main>
+      <div className="app-card p-6">
+        <SimpleTextForm
+          action={createDepartamento}
+          fieldName="nome"
+          label="Nome do departamento"
+          submitLabel="Criar departamento"
+        />
+      </div>
+    </div>
   );
 }

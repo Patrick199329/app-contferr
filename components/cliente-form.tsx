@@ -3,6 +3,7 @@
 import { useActionState, useState } from 'react';
 import { formatCnpj, isValidCnpj, onlyDigits } from '@/lib/cnpj';
 import type { ClienteFormState } from '@/app/(dashboard)/clientes/actions';
+import { Button } from '@/components/ui/button';
 
 type ClienteFormProps = {
   action: (prevState: ClienteFormState, formData: FormData) => Promise<ClienteFormState>;
@@ -73,18 +74,13 @@ export function ClienteForm({
             value={formatCnpj(cnpj)}
             onChange={(e) => setCnpj(e.target.value)}
             placeholder="00.000.000/0000-00"
-            className="w-full rounded border border-black/15 px-3 py-2 dark:border-white/20"
+            className="input"
           />
-          <button
-            type="button"
-            onClick={handleLookup}
-            disabled={lookupPending}
-            className="shrink-0 rounded border border-black/15 px-3 py-2 text-sm disabled:opacity-60 dark:border-white/20"
-          >
+          <Button type="button" variant="secondary" onClick={handleLookup} disabled={lookupPending}>
             {lookupPending ? 'Buscando…' : 'Buscar dados'}
-          </button>
+          </Button>
         </div>
-        {lookupError ? <p className="text-sm text-amber-600">{lookupError}</p> : null}
+        {lookupError ? <p className="text-sm text-status-pending">{lookupError}</p> : null}
       </div>
 
       <div className="flex flex-col gap-1">
@@ -97,7 +93,7 @@ export function ClienteForm({
           required
           value={razaoSocial}
           onChange={(e) => setRazaoSocial(e.target.value)}
-          className="rounded border border-black/15 px-3 py-2 dark:border-white/20"
+          className="input"
         />
       </div>
 
@@ -111,15 +107,18 @@ export function ClienteForm({
           required
           value={nomeFantasia}
           onChange={(e) => setNomeFantasia(e.target.value)}
-          className="rounded border border-black/15 px-3 py-2 dark:border-white/20"
+          className="input"
         />
       </div>
 
       {departamentosDisponiveis && departamentosDisponiveis.length > 0 ? (
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-2">
           <span className="text-sm font-medium">Departamentos</span>
           {departamentosDisponiveis.map((dep) => (
-            <label key={dep.id} className="flex items-center gap-2 text-sm">
+            <label
+              key={dep.id}
+              className="flex items-center gap-2 rounded-2xl bg-surface-muted/60 px-3 py-2 text-sm"
+            >
               <input type="checkbox" name="departamentos" value={dep.id} />
               {dep.nome}
             </label>
@@ -127,15 +126,11 @@ export function ClienteForm({
         </div>
       ) : null}
 
-      {state.error ? <p className="text-sm text-red-600">{state.error}</p> : null}
+      {state.error ? <p className="text-sm text-status-inactive">{state.error}</p> : null}
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="rounded bg-foreground px-4 py-2 text-sm font-medium text-background disabled:opacity-60"
-      >
+      <Button type="submit" disabled={pending}>
         {pending ? 'Salvando…' : submitLabel}
-      </button>
+      </Button>
     </form>
   );
 }
