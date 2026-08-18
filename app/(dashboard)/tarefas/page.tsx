@@ -59,6 +59,12 @@ export default async function TarefasPage({ searchParams }: TarefasPageProps) {
 
   const competencia = currentCompetencia();
 
+  const { data: vinculos } = await supabase
+    .from('cliente_departamentos')
+    .select('cliente_id')
+    .eq('departamento_id', departamentoAtual.id);
+  const clienteIdsDoDepartamento = (vinculos ?? []).map((v) => v.cliente_id);
+
   const [{ data: colunas }, { data: clientes }, { data: tarefas }, { data: profiles }] =
     await Promise.all([
       supabase
@@ -68,12 +74,15 @@ export default async function TarefasPage({ searchParams }: TarefasPageProps) {
         .eq('status', 'ativo')
         .order('ordem')
         .returns<Coluna[]>(),
-      supabase
-        .from('clientes')
-        .select('*')
-        .eq('status', 'ativo')
-        .order('nome_fantasia')
-        .returns<Cliente[]>(),
+      clienteIdsDoDepartamento.length > 0
+        ? supabase
+            .from('clientes')
+            .select('*')
+            .in('id', clienteIdsDoDepartamento)
+            .eq('status', 'ativo')
+            .order('nome_fantasia')
+            .returns<Cliente[]>()
+        : Promise.resolve({ data: [] as Cliente[] }),
       supabase
         .from('tarefas')
         .select('*')

@@ -54,8 +54,11 @@ export default async function PermissoesPage({ params }: PermissoesPageProps) {
     <main className="mx-auto flex max-w-md flex-col gap-6 p-8">
       <h1 className="text-xl font-semibold">Permissões — {usuario.nome || usuario.email}</h1>
       <p className="text-sm text-black/60 dark:text-white/60">
-        Departamentos que este usuário pode ver e editar na Tabela de Tarefas e no Histórico. Efeito
-        imediato — não precisa de logout.
+        Departamentos que este usuário pode ver e editar na Tabela de Tarefas e no Histórico.
+        {usuario.role === 'gerente'
+          ? ' Como Gerente, também poderá criar clientes e vincular/desvincular clientes existentes nesses departamentos.'
+          : ''}{' '}
+        Efeito imediato — não precisa de logout.
       </p>
 
       <ul className="flex flex-col divide-y divide-black/10 dark:divide-white/10">

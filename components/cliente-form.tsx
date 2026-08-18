@@ -11,12 +11,18 @@ type ClienteFormProps = {
     nomeFantasia: string;
     cnpj: string;
   };
+  departamentosDisponiveis?: { id: string; nome: string }[];
   submitLabel: string;
 };
 
 const initialState: ClienteFormState = { error: null };
 
-export function ClienteForm({ action, initialValues, submitLabel }: ClienteFormProps) {
+export function ClienteForm({
+  action,
+  initialValues,
+  departamentosDisponiveis,
+  submitLabel,
+}: ClienteFormProps) {
   const [state, formAction, pending] = useActionState(action, initialState);
   const [cnpj, setCnpj] = useState(initialValues?.cnpj ?? '');
   const [razaoSocial, setRazaoSocial] = useState(initialValues?.razaoSocial ?? '');
@@ -108,6 +114,18 @@ export function ClienteForm({ action, initialValues, submitLabel }: ClienteFormP
           className="rounded border border-black/15 px-3 py-2 dark:border-white/20"
         />
       </div>
+
+      {departamentosDisponiveis && departamentosDisponiveis.length > 0 ? (
+        <div className="flex flex-col gap-1">
+          <span className="text-sm font-medium">Departamentos</span>
+          {departamentosDisponiveis.map((dep) => (
+            <label key={dep.id} className="flex items-center gap-2 text-sm">
+              <input type="checkbox" name="departamentos" value={dep.id} />
+              {dep.nome}
+            </label>
+          ))}
+        </div>
+      ) : null}
 
       {state.error ? <p className="text-sm text-red-600">{state.error}</p> : null}
 

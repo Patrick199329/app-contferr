@@ -50,14 +50,19 @@ export default async function UsuariosPage({ searchParams }: UsuariosPageProps) 
                 {u.status === 'inativo' ? ' (inativo)' : ''}
               </p>
               <p className="text-sm text-black/60 dark:text-white/60">
-                {u.email} — {u.role === 'admin' ? 'Administrador' : 'Usuário Final'}
+                {u.email} —{' '}
+                {u.role === 'admin'
+                  ? 'Administrador'
+                  : u.role === 'gerente'
+                    ? 'Gerente'
+                    : 'Usuário Final'}
               </p>
             </div>
             <div className="flex gap-3">
               <Link href={`/usuarios/${u.id}/editar`} className="text-sm underline">
                 Editar
               </Link>
-              {u.role === 'usuario_final' ? (
+              {u.role !== 'admin' ? (
                 <Link href={`/usuarios/${u.id}/permissoes`} className="text-sm underline">
                   Permissões
                 </Link>

@@ -1,18 +1,51 @@
 import { redirect } from 'next/navigation';
 import { ClienteForm } from '@/components/cliente-form';
-import { getCurrentProfile } from '@/lib/supabase/profile';
+import { getCurrentProfile, podeGerenciarClientes } from '@/lib/supabase/profile';
+import { createClient } from '@/lib/supabase/server';
 import { createCliente } from '../actions';
 
 export default async function NovoClientePage() {
   const profile = await getCurrentProfile();
-  if (profile?.role !== 'admin') {
+  if (!podeGerenciarClientes(profile)) {
     redirect('/clientes');
+  }
+
+  const supabase = await createClient();
+
+  let departamentosDisponiveis: { id: string; nome: string }[] = [];
+
+  if (profile?.role === 'admin') {
+    const { data } = await supabase
+      .from('departamentos')
+      .select('id, nome')
+      .eq('status', 'ativo')
+      .order('ordem');
+    departamentosDisponiveis = data ?? [];
+  } else {
+    const { data: permissoes } = await supabase
+      .from('permissoes')
+      .select('departamento_id')
+      .eq('usuario_id', profile!.id);
+    const ids = (permissoes ?? []).map((p) => p.departamento_id);
+    if (ids.length > 0) {
+      const { data } = await supabase
+        .from('departamentos')
+        .select('id, nome')
+        .in('id', ids)
+        .eq('status', 'ativo')
+        .order('ordem');
+      departamentosDisponiveis = data ?? [];
+    }
   }
 
   return (
     <main className="mx-auto flex max-w-md flex-col gap-6 p-8">
       <h1 className="text-xl font-semibold">Novo cliente</h1>
-      <ClienteForm action={createCliente} submitLabel="Criar cliente" />
+      <ClienteForm
+        action={createCliente}
+        departamentosDisponiveis={departamentosDisponiveis}
+        submitLabel="Criar cliente"
+      />
     </main>
   );
 }

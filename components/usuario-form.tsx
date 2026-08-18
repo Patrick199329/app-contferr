@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react';
 import type { FormState } from '@/app/(dashboard)/usuarios/actions';
+import type { Role } from '@/lib/supabase/profile';
 
 type UsuarioFormProps = {
   action: (prevState: FormState, formData: FormData) => Promise<FormState>;
@@ -9,7 +10,7 @@ type UsuarioFormProps = {
   initialValues?: {
     nome: string;
     email: string;
-    role: 'admin' | 'usuario_final';
+    role: Role;
   };
   submitLabel: string;
 };
@@ -81,6 +82,7 @@ export function UsuarioForm({ action, mode, initialValues, submitLabel }: Usuari
           className="rounded border border-black/15 px-3 py-2 dark:border-white/20"
         >
           <option value="usuario_final">Usuário Final</option>
+          <option value="gerente">Gerente</option>
           <option value="admin">Administrador</option>
         </select>
       </div>

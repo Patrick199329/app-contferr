@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { getCurrentProfile } from '@/lib/supabase/profile';
+import { getCurrentProfile, type Role } from '@/lib/supabase/profile';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 
@@ -23,7 +23,7 @@ export async function createUsuario(_prevState: FormState, formData: FormData): 
   const nome = String(formData.get('nome') ?? '').trim();
   const email = String(formData.get('email') ?? '').trim();
   const senha = String(formData.get('senha') ?? '');
-  const role = String(formData.get('role') ?? 'usuario_final') as 'admin' | 'usuario_final';
+  const role = String(formData.get('role') ?? 'usuario_final') as Role;
 
   if (!nome || !email) return { error: 'Nome e e-mail são obrigatórios.' };
   if (senha.length < 8) return { error: 'A senha deve ter pelo menos 8 caracteres.' };
@@ -40,9 +40,9 @@ export async function createUsuario(_prevState: FormState, formData: FormData): 
     return { error: error.message };
   }
 
-  if (role === 'admin') {
+  if (role !== 'usuario_final') {
     const supabase = await createClient();
-    await supabase.from('profiles').update({ role: 'admin' }).eq('id', data.user.id);
+    await supabase.from('profiles').update({ role }).eq('id', data.user.id);
   }
 
   revalidatePath('/usuarios');
@@ -57,7 +57,7 @@ export async function updateUsuario(
   await requireAdmin();
 
   const nome = String(formData.get('nome') ?? '').trim();
-  const role = String(formData.get('role') ?? 'usuario_final') as 'admin' | 'usuario_final';
+  const role = String(formData.get('role') ?? 'usuario_final') as Role;
 
   if (!nome) return { error: 'Informe o nome.' };
 
