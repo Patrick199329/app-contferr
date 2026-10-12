@@ -28,6 +28,10 @@ jobs:
           sudo sh -c 'echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(. /etc/os-release && echo $VERSION_CODENAME)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
           sudo apt-get update
           sudo apt-get install -y postgresql-client-17
+          # A imagem do runner já vem com o pg_dump 16 em /usr/bin, na
+          # frente no PATH — sem isso, "pg_dump" continua resolvendo pro
+          # antigo mesmo com o 17 instalado.
+          echo "/usr/lib/postgresql/17/bin" >> "$GITHUB_PATH"
 
       - name: Instala as dependências do script de backup
         run: npm install --no-save @supabase/supabase-js googleapis jszip
