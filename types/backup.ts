@@ -24,6 +24,18 @@ export const BACKUP_STATUS_TONES: Record<BackupStatus, 'active' | 'pending' | 'i
   erro: 'inactive',
 };
 
+const VALIDADE_TOKEN_GOOGLE_DIAS = 7;
+
+// Enquanto o app OAuth do Google ficar em modo "Testing", o refresh token
+// expira ~7 dias depois de emitido. Função separada (não inline no corpo de
+// um componente) porque chamar Date.now() direto durante a renderização
+// viola a regra de pureza do React.
+export function calcularDiasRestantesAutorizacaoGoogle(atualizadoEm: string | null): number | null {
+  if (!atualizadoEm) return null;
+  const diasDecorridos = Math.floor((Date.now() - new Date(atualizadoEm).getTime()) / (24 * 60 * 60 * 1000));
+  return VALIDADE_TOKEN_GOOGLE_DIAS - diasDecorridos;
+}
+
 export function formatarBytes(bytes: number | null): string {
   if (!bytes) return '—';
   const mb = bytes / (1024 * 1024);

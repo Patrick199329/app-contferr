@@ -4,21 +4,33 @@ import { Breadcrumbs } from '@/components/breadcrumbs';
 import { BackupsList } from '@/components/backups-list';
 import { ehAdminInnovation, getCurrentProfile } from '@/lib/supabase/profile';
 import { createClient } from '@/lib/supabase/server';
-import type { BackupLog } from '@/types/backup';
+import { calcularDiasRestantesAutorizacaoGoogle, type BackupLog } from '@/types/backup';
 
-export default async function BackupsPage() {
+type BackupsPageProps = {
+  searchParams: Promise<{ erro?: string; autorizado?: string }>;
+};
+
+export default async function BackupsPage({ searchParams }: BackupsPageProps) {
   const profile = await getCurrentProfile();
   if (!ehAdminInnovation(profile)) {
     redirect('/dashboard');
   }
 
+  const { erro, autorizado } = await searchParams;
   const supabase = await createClient();
-  const { data: backups } = await supabase
-    .from('backup_logs')
-    .select('*')
-    .order('iniciado_em', { ascending: false })
-    .limit(60)
-    .returns<BackupLog[]>();
+  const [{ data: backups }, { data: integracaoGoogle }] = await Promise.all([
+    supabase
+      .from('backup_logs')
+      .select('*')
+      .order('iniciado_em', { ascending: false })
+      .limit(60)
+      .returns<BackupLog[]>(),
+    supabase.from('integracao_google_drive').select('atualizado_em').eq('id', true).single(),
+  ]);
+
+  const diasRestantesGoogle = calcularDiasRestantesAutorizacaoGoogle(
+    integracaoGoogle?.atualizado_em ?? null,
+  );
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
@@ -30,7 +42,13 @@ export default async function BackupsPage() {
           Actions, e salvo no Google Drive. Visível só pra Innovation.
         </p>
       </div>
-      <BackupsList backups={backups ?? []} dispararBackupManual={dispararBackupManual} />
+      <BackupsList
+        backups={backups ?? []}
+        dispararBackupManual={dispararBackupManual}
+        diasRestantesGoogle={diasRestantesGoogle}
+        erroQuery={erro ?? null}
+        autorizadoQuery={autorizado === '1'}
+      />
     </div>
   );
 }

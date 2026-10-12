@@ -14,9 +14,22 @@ import {
 type BackupsListProps = {
   backups: BackupLog[];
   dispararBackupManual: () => Promise<BackupFormState>;
+  // Enquanto o app OAuth do Google ficar em modo "Testing", o refresh token
+  // expira ~7 dias depois de emitido — precisa reautorizar pelo botão antes
+  // disso, senão a rotina diária passa a falhar sozinha. Calculado no
+  // Server Component (page.tsx), não aqui.
+  diasRestantesGoogle: number | null;
+  erroQuery: string | null;
+  autorizadoQuery: boolean;
 };
 
-export function BackupsList({ backups, dispararBackupManual }: BackupsListProps) {
+export function BackupsList({
+  backups,
+  dispararBackupManual,
+  diasRestantesGoogle: diasRestantes,
+  erroQuery,
+  autorizadoQuery,
+}: BackupsListProps) {
   const [pending, startTransition] = useTransition();
   const [resultado, setResultado] = useState<BackupFormState | null>(null);
 
@@ -26,8 +39,33 @@ export function BackupsList({ backups, dispararBackupManual }: BackupsListProps)
     });
   }
 
+  const precisaAutorizar = diasRestantes === null || diasRestantes <= 2;
+
   return (
     <div className="flex flex-col gap-4">
+      <div className="app-card flex flex-wrap items-center justify-between gap-3 p-4">
+        <div>
+          <p className="text-sm font-medium">Autorização do Google Drive</p>
+          <p className="text-sm text-muted">
+            {diasRestantes === null
+              ? 'Ainda não autorizado — o backup não vai conseguir salvar no Drive até isso ser feito.'
+              : diasRestantes !== null && diasRestantes <= 0
+                ? 'Expirada — reautorize pra voltar a funcionar.'
+                : `Válida por mais ${diasRestantes} dia(s) (enquanto o app estiver em modo de teste no Google).`}
+          </p>
+        </div>
+        <a
+          href="/api/google-oauth/iniciar"
+          className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+            precisaAutorizar
+              ? 'bg-status-pending text-white hover:opacity-90'
+              : 'border border-border hover:bg-surface-muted'
+          }`}
+        >
+          {diasRestantes === null ? 'Autorizar Google Drive' : 'Renovar autorização'}
+        </a>
+      </div>
+
       <div className="app-card flex flex-wrap items-center justify-between gap-3 p-4">
         <p className="text-sm text-muted">
           A rotina diária roda sozinha; use o botão abaixo só se precisar de um backup extra agora.
@@ -41,6 +79,10 @@ export function BackupsList({ backups, dispararBackupManual }: BackupsListProps)
         <p className="text-sm text-status-active">
           Backup disparado — acompanhe o andamento na lista abaixo em alguns minutos.
         </p>
+      ) : null}
+      {erroQuery ? <p className="text-sm text-status-inactive">{erroQuery}</p> : null}
+      {autorizadoQuery ? (
+        <p className="text-sm text-status-active">Google Drive autorizado com sucesso.</p>
       ) : null}
 
       <div className="app-card overflow-x-auto">

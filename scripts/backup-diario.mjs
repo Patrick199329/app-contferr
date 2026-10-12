@@ -36,7 +36,6 @@ const SUPABASE_SERVICE_ROLE_KEY = obrigatorio('SUPABASE_SERVICE_ROLE_KEY');
 // Fazendo como o dono de verdade, o arquivo usa o espaço dele normalmente.
 const GOOGLE_CLIENT_ID = obrigatorio('GOOGLE_CLIENT_ID');
 const GOOGLE_CLIENT_SECRET = obrigatorio('GOOGLE_CLIENT_SECRET');
-const GOOGLE_REFRESH_TOKEN = obrigatorio('GOOGLE_REFRESH_TOKEN');
 const GOOGLE_DRIVE_FOLDER_ID = obrigatorio('GOOGLE_DRIVE_FOLDER_ID');
 const RETENCAO_DIAS = Number(process.env.BACKUP_RETENCAO_DIAS ?? '30');
 const DISPARADO_MANUALMENTE = process.env.DISPARADO_MANUALMENTE === 'true';
@@ -123,14 +122,33 @@ async function zipPasta(pasta, zip, prefixoZip = '') {
   }
 }
 
-function clienteDrive() {
+// Lido do banco (não de um secret fixo) — o botão "Autorizar Google Drive"
+// em /admin/backups grava o token mais recente ali a cada renovação, sem
+// precisar tocar em nenhum secret do GitHub.
+async function buscarRefreshToken() {
+  const { data, error } = await supabase
+    .from('integracao_google_drive')
+    .select('refresh_token')
+    .eq('id', true)
+    .single();
+  if (error) throw new Error(`Falha ao buscar o refresh token: ${error.message}`);
+  if (!data.refresh_token) {
+    throw new Error(
+      'Google Drive ainda não autorizado — abra /admin/backups e clique em "Autorizar Google Drive".',
+    );
+  }
+  return data.refresh_token;
+}
+
+async function clienteDrive() {
+  const refreshToken = await buscarRefreshToken();
   const auth = new google.auth.OAuth2(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET);
-  auth.setCredentials({ refresh_token: GOOGLE_REFRESH_TOKEN });
+  auth.setCredentials({ refresh_token: refreshToken });
   return google.drive({ version: 'v3', auth });
 }
 
 async function subirParaDrive(caminhoZip, nomeArquivo) {
-  const drive = clienteDrive();
+  const drive = await clienteDrive();
 
   const resposta = await drive.files.create({
     requestBody: { name: nomeArquivo, parents: [GOOGLE_DRIVE_FOLDER_ID] },
@@ -142,7 +160,7 @@ async function subirParaDrive(caminhoZip, nomeArquivo) {
 }
 
 async function removerBackupsAntigos() {
-  const drive = clienteDrive();
+  const drive = await clienteDrive();
 
   const limite = new Date(Date.now() - RETENCAO_DIAS * 24 * 60 * 60 * 1000).toISOString();
   const { data } = await drive.files.list({
