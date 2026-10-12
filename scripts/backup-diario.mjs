@@ -30,7 +30,13 @@ function obrigatorio(nome) {
 const SUPABASE_DB_URL = obrigatorio('SUPABASE_DB_URL');
 const SUPABASE_URL = obrigatorio('SUPABASE_URL');
 const SUPABASE_SERVICE_ROLE_KEY = obrigatorio('SUPABASE_SERVICE_ROLE_KEY');
-const GOOGLE_SERVICE_ACCOUNT_JSON = obrigatorio('GOOGLE_SERVICE_ACCOUNT_JSON');
+// OAuth na conta pessoal do dono do Drive, não conta de serviço — conta de
+// serviço não tem cota de armazenamento própria em Drive pessoal (só
+// funciona com Shared Drive, recurso exclusivo do Google Workspace pago).
+// Fazendo como o dono de verdade, o arquivo usa o espaço dele normalmente.
+const GOOGLE_CLIENT_ID = obrigatorio('GOOGLE_CLIENT_ID');
+const GOOGLE_CLIENT_SECRET = obrigatorio('GOOGLE_CLIENT_SECRET');
+const GOOGLE_REFRESH_TOKEN = obrigatorio('GOOGLE_REFRESH_TOKEN');
 const GOOGLE_DRIVE_FOLDER_ID = obrigatorio('GOOGLE_DRIVE_FOLDER_ID');
 const RETENCAO_DIAS = Number(process.env.BACKUP_RETENCAO_DIAS ?? '30');
 const DISPARADO_MANUALMENTE = process.env.DISPARADO_MANUALMENTE === 'true';
@@ -117,13 +123,14 @@ async function zipPasta(pasta, zip, prefixoZip = '') {
   }
 }
 
+function clienteDrive() {
+  const auth = new google.auth.OAuth2(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET);
+  auth.setCredentials({ refresh_token: GOOGLE_REFRESH_TOKEN });
+  return google.drive({ version: 'v3', auth });
+}
+
 async function subirParaDrive(caminhoZip, nomeArquivo) {
-  const credenciais = JSON.parse(GOOGLE_SERVICE_ACCOUNT_JSON);
-  const auth = new google.auth.GoogleAuth({
-    credentials: credenciais,
-    scopes: ['https://www.googleapis.com/auth/drive.file'],
-  });
-  const drive = google.drive({ version: 'v3', auth });
+  const drive = clienteDrive();
 
   const resposta = await drive.files.create({
     requestBody: { name: nomeArquivo, parents: [GOOGLE_DRIVE_FOLDER_ID] },
@@ -135,12 +142,7 @@ async function subirParaDrive(caminhoZip, nomeArquivo) {
 }
 
 async function removerBackupsAntigos() {
-  const credenciais = JSON.parse(GOOGLE_SERVICE_ACCOUNT_JSON);
-  const auth = new google.auth.GoogleAuth({
-    credentials: credenciais,
-    scopes: ['https://www.googleapis.com/auth/drive.file'],
-  });
-  const drive = google.drive({ version: 'v3', auth });
+  const drive = clienteDrive();
 
   const limite = new Date(Date.now() - RETENCAO_DIAS * 24 * 60 * 60 * 1000).toISOString();
   const { data } = await drive.files.list({
