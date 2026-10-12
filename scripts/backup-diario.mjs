@@ -147,14 +147,34 @@ async function clienteDrive() {
   return google.drive({ version: 'v3', auth });
 }
 
+// O Drive ocasionalmente devolve um 5xx passageiro (erro do lado do Google,
+// não nosso) — tenta de novo algumas vezes com espera curta antes de
+// desistir, em vez de falhar o backup inteiro por uma instabilidade de
+// alguns segundos.
+async function comRetentativa(fn, tentativas = 3, esperaMs = 5000) {
+  for (let i = 1; i <= tentativas; i++) {
+    try {
+      return await fn();
+    } catch (erro) {
+      const codigo = erro?.response?.status ?? erro?.code;
+      const ehTransitorio = typeof codigo === 'number' && codigo >= 500;
+      if (!ehTransitorio || i === tentativas) throw erro;
+      console.warn(`Tentativa ${i} falhou (status ${codigo}), tentando de novo em ${esperaMs / 1000}s…`);
+      await new Promise((resolve) => setTimeout(resolve, esperaMs));
+    }
+  }
+}
+
 async function subirParaDrive(caminhoZip, nomeArquivo) {
   const drive = await clienteDrive();
 
-  const resposta = await drive.files.create({
-    requestBody: { name: nomeArquivo, parents: [GOOGLE_DRIVE_FOLDER_ID] },
-    media: { mimeType: 'application/zip', body: createReadStream(caminhoZip) },
-    fields: 'id, webViewLink',
-  });
+  const resposta = await comRetentativa(() =>
+    drive.files.create({
+      requestBody: { name: nomeArquivo, parents: [GOOGLE_DRIVE_FOLDER_ID] },
+      media: { mimeType: 'application/zip', body: createReadStream(caminhoZip) },
+      fields: 'id, webViewLink',
+    }),
+  );
 
   return { id: resposta.data.id, url: resposta.data.webViewLink };
 }
