@@ -200,9 +200,30 @@ async function main() {
     const pastaTmp = mkdtempSync(path.join(tmpdir(), 'contferr-backup-'));
 
     console.log('Gerando dump do banco…');
-    rodarPgDump(path.join(pastaTmp, 'banco-public.sql'), ['--schema=public', '--no-owner', '--no-privileges']);
-    rodarPgDump(path.join(pastaTmp, 'banco-auth.sql'), ['--schema=auth', '--data-only', '--no-owner', '--no-privileges']);
-    rodarPgDump(path.join(pastaTmp, 'banco-storage.sql'), ['--schema=storage', '--data-only', '--no-owner', '--no-privileges']);
+    // --inserts: INSERT normal em vez de COPY ... FROM stdin — COPY só
+    // funciona através do protocolo do psql; restaurar com um client de
+    // Postgres comum (scripts/restaurar-backup.mjs) exige SQL executável
+    // direto, sem depender do psql estar instalado em quem for restaurar.
+    rodarPgDump(path.join(pastaTmp, 'banco-public.sql'), [
+      '--schema=public',
+      '--no-owner',
+      '--no-privileges',
+      '--inserts',
+    ]);
+    rodarPgDump(path.join(pastaTmp, 'banco-auth.sql'), [
+      '--schema=auth',
+      '--data-only',
+      '--no-owner',
+      '--no-privileges',
+      '--inserts',
+    ]);
+    rodarPgDump(path.join(pastaTmp, 'banco-storage.sql'), [
+      '--schema=storage',
+      '--data-only',
+      '--no-owner',
+      '--no-privileges',
+      '--inserts',
+    ]);
 
     console.log('Baixando arquivos do Storage…');
     const pastaArquivos = path.join(pastaTmp, 'arquivos');

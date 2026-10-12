@@ -49,7 +49,13 @@ async function extrairZip(caminhoZip) {
 
 async function restaurarSql(client, caminhoSql, rotulo) {
   console.log(`Restaurando ${rotulo}…`);
-  const sql = await readFile(caminhoSql, 'utf8');
+  const sqlBruto = await readFile(caminhoSql, 'utf8');
+  // \restrict / \unrestrict são comandos do psql (proteção contra execução
+  // parcial), não SQL — um client de Postgres comum não entende e falha.
+  const sql = sqlBruto
+    .split('\n')
+    .filter((linha) => !linha.startsWith('\\restrict') && !linha.startsWith('\\unrestrict'))
+    .join('\n');
   await client.query(sql);
   console.log(`${rotulo} restaurado.`);
 }
