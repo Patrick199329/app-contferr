@@ -1,11 +1,14 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { Badge } from '@/components/ui/badge';
+import { DepartamentoTabs } from '@/components/departamento-tabs';
+import { HistoricoTable } from '@/components/historico-table';
 import { currentCompetencia, formatCompetencia, shiftCompetencia } from '@/lib/competencia';
+import { colunaAplicavelNoMes } from '@/lib/colunas-periodicidade';
+import { filtrarPorFerramenta } from '@/lib/departamentos-tree';
+import { selectEmLotes } from '@/lib/supabase/batch';
 import { getDepartamentosPermitidos, podeAcessarDepartamento } from '@/lib/supabase/permissoes';
 import { getCurrentProfile } from '@/lib/supabase/profile';
 import { createClient } from '@/lib/supabase/server';
-import { resolveDisplayValue } from '@/lib/valores-tarefa';
 import type { Cliente } from '@/types/cliente';
 import type { Coluna, Departamento } from '@/types/departamento';
 import type { Tarefa } from '@/types/tarefa';
@@ -26,19 +29,29 @@ export default async function HistoricoPage({ searchParams }: HistoricoPageProps
     .order('ordem')
     .returns<Departamento[]>();
 
+  const comFerramenta = filtrarPorFerramenta(todosDepartamentos ?? [], 'usa_tarefas_padrao');
   const permitidos = await getDepartamentosPermitidos();
-  const departamentos = (todosDepartamentos ?? []).filter((d) =>
-    podeAcessarDepartamento(permitidos, d.id),
-  );
+  const departamentos = comFerramenta.filter((d) => podeAcessarDepartamento(permitidos, d.id));
 
-  if (departamentos.length === 0) {
+  // Departamentos que só agrupam subdepartamentos não têm colunas/tarefas
+  // próprias — nunca podem virar a aba selecionada (só aparecem como dropdown).
+  const paisComFilhos = new Set(
+    departamentos.filter((d) => d.parent_id).map((d) => d.parent_id as string),
+  );
+  const selecionaveis = departamentos.filter((d) => !paisComFilhos.has(d.id));
+
+  if (selecionaveis.length === 0) {
+    const semDepartamentos = (todosDepartamentos ?? []).length === 0;
+    const semFerramentaHabilitada = !semDepartamentos && comFerramenta.length === 0;
     return (
       <div className="mx-auto flex max-w-2xl flex-col gap-4">
         <h1 className="text-xl font-semibold">Histórico de Competências</h1>
         <p className="text-sm text-muted">
-          {(todosDepartamentos ?? []).length === 0
+          {semDepartamentos
             ? 'Nenhum departamento cadastrado ainda.'
-            : 'Você ainda não tem acesso a nenhum departamento. Fale com o Administrador.'}
+            : semFerramentaHabilitada
+              ? 'Nenhum departamento tem a Tabela de Tarefas habilitada. Habilite em Departamentos › Ferramentas habilitadas.'
+              : 'Você ainda não tem acesso a nenhum departamento. Fale com o Administrador.'}
         </p>
       </div>
     );
@@ -46,7 +59,7 @@ export default async function HistoricoPage({ searchParams }: HistoricoPageProps
 
   const { departamento: departamentoParam, competencia: competenciaParam } = await searchParams;
   const departamentoAtual =
-    departamentos.find((d) => d.id === departamentoParam) ?? departamentos[0];
+    selecionaveis.find((d) => d.id === departamentoParam) ?? selecionaveis[0];
   const competencia = competenciaParam ?? shiftCompetencia(currentCompetencia(), -1);
   const podeAvancar = competencia < currentCompetencia();
 
@@ -59,10 +72,10 @@ export default async function HistoricoPage({ searchParams }: HistoricoPageProps
 
   const clienteIds = [...new Set((tarefas ?? []).map((t) => t.cliente_id))];
 
-  const [{ data: clientes }, { data: colunas }, { data: profiles }] = await Promise.all([
-    clienteIds.length > 0
-      ? supabase.from('clientes').select('*').in('id', clienteIds).returns<Cliente[]>()
-      : Promise.resolve({ data: [] as Cliente[] }),
+  const [clientes, { data: colunas }, { data: profiles }] = await Promise.all([
+    selectEmLotes(clienteIds, (lote) =>
+      supabase.from('clientes').select('*').in('id', lote).returns<Cliente[]>(),
+    ),
     supabase
       .from('colunas')
       .select('*')
@@ -76,30 +89,23 @@ export default async function HistoricoPage({ searchParams }: HistoricoPageProps
     a.nome_fantasia.localeCompare(b.nome_fantasia),
   );
 
+  const colunasDoMes = (colunas ?? []).filter((c) => colunaAplicavelNoMes(c, competencia));
+
   const tarefasPorCliente: Record<string, Tarefa> = {};
   for (const tarefa of tarefas ?? []) {
     tarefasPorCliente[tarefa.cliente_id] = tarefa;
   }
 
   return (
-    <div className="mx-auto flex max-w-5xl flex-col gap-6">
+    <div className="flex w-full flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-semibold">Histórico — {formatCompetencia(competencia)}</h1>
-        <div className="flex flex-wrap gap-2">
-          {departamentos.map((dep) => (
-            <Link
-              key={dep.id}
-              href={`/historico?departamento=${dep.id}&competencia=${competencia}`}
-              className={`rounded-full px-4 py-2 text-sm font-medium ${
-                dep.id === departamentoAtual.id
-                  ? 'bg-accent text-accent-foreground'
-                  : 'bg-surface-muted text-foreground/70 hover:bg-surface-muted/70'
-              }`}
-            >
-              {dep.nome}
-            </Link>
-          ))}
-        </div>
+        <DepartamentoTabs
+          departamentos={departamentos}
+          ativoId={departamentoAtual.id}
+          basePath="/historico"
+          extraQuery={`&competencia=${competencia}`}
+        />
       </div>
 
       <div className="flex items-center gap-4 text-sm">
@@ -122,54 +128,12 @@ export default async function HistoricoPage({ searchParams }: HistoricoPageProps
         </Link>
       </div>
 
-      <div className="app-card overflow-x-auto">
-        <table className="app-table w-full min-w-max border-collapse">
-          <thead>
-            <tr>
-              <th>Cliente</th>
-              {(colunas ?? []).map((coluna) => (
-                <th key={coluna.id}>
-                  {coluna.nome}
-                  {coluna.status === 'inativo' ? <Badge tone="neutral"> inativa</Badge> : null}
-                </th>
-              ))}
-              <th>Última edição</th>
-            </tr>
-          </thead>
-          <tbody>
-            {clientesOrdenados.map((cliente) => {
-              const tarefa = tarefasPorCliente[cliente.id];
-              return (
-                <tr key={cliente.id}>
-                  <td className="font-medium whitespace-nowrap">
-                    {cliente.nome_fantasia}
-                    {cliente.status === 'inativo' ? <Badge tone="inactive"> inativo</Badge> : null}
-                  </td>
-                  {(colunas ?? []).map((coluna) => (
-                    <td key={coluna.id} className="text-foreground/80">
-                      {resolveDisplayValue(
-                        coluna.tipo,
-                        tarefa?.valores?.[coluna.id],
-                        profiles ?? [],
-                      )}
-                    </td>
-                  ))}
-                  <td className="text-xs whitespace-nowrap text-muted">
-                    {tarefa?.updated_at ? new Date(tarefa.updated_at).toLocaleString('pt-BR') : '—'}
-                  </td>
-                </tr>
-              );
-            })}
-            {clientesOrdenados.length === 0 ? (
-              <tr>
-                <td colSpan={(colunas ?? []).length + 2} className="p-4 text-center text-muted">
-                  Nenhum dado registrado para esta competência.
-                </td>
-              </tr>
-            ) : null}
-          </tbody>
-        </table>
-      </div>
+      <HistoricoTable
+        clientes={clientesOrdenados}
+        colunas={colunasDoMes}
+        tarefasPorCliente={tarefasPorCliente}
+        profiles={profiles ?? []}
+      />
     </div>
   );
 }

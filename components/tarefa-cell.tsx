@@ -2,7 +2,11 @@
 
 import { useState, useTransition } from 'react';
 import { updateTarefaValor } from '@/app/(dashboard)/tarefas/actions';
+import { ChecklistEstadoPicker } from '@/components/checklist-estado-picker';
+import { copyToClipboard } from '@/lib/clipboard';
+import { CAMPOS_CLIENTE_RESTRITOS, type CampoCliente } from '@/types/cliente';
 import type { ColunaTipo } from '@/types/departamento';
+import { LINK_ICONES, normalizarUrl, type LinkIconeKey } from '@/lib/link-icones';
 
 type TarefaCellProps = {
   clienteId: string;
@@ -11,9 +15,18 @@ type TarefaCellProps = {
   colunaId: string;
   tipo: ColunaTipo;
   opcoes?: string[];
-  profiles?: { id: string; email: string; nome: string }[];
+  profiles?: { id: string; email: string; nome: string; status: 'ativo' | 'inativo' }[];
   initialValue: string;
   onSaved?: () => void;
+  // Só usados quando tipo === 'campo_cliente' — valor lido ao vivo do
+  // cadastro do cliente (nunca de `tarefas.valores`), ver
+  // components/tarefas-table.tsx.
+  campoClienteAlvo?: CampoCliente | null;
+  campoClienteValor?: string | null;
+  // Só usados quando tipo === 'link' — URL e ícone são fixos na configuração
+  // da coluna, não por linha; a célula só abre o link, sem campo pra editar.
+  linkIcone?: LinkIconeKey;
+  linkUrl?: string | null;
 };
 
 export function TarefaCell({
@@ -26,11 +39,25 @@ export function TarefaCell({
   profiles = [],
   initialValue,
   onSaved,
+  campoClienteAlvo,
+  campoClienteValor,
+  linkIcone,
+  linkUrl,
 }: TarefaCellProps) {
   const [value, setValue] = useState(initialValue);
   const [dirty, setDirty] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [copiado, setCopiado] = useState(false);
+  const [campoVisivel, setCampoVisivel] = useState(false);
+
+  function copiar(texto: string) {
+    copyToClipboard(texto).then((ok) => {
+      if (!ok) return;
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 1500);
+    });
+  }
 
   function save(newValue: string) {
     setError(null);
@@ -52,15 +79,15 @@ export function TarefaCell({
 
   if (tipo === 'texto') {
     field = (
-      <input
-        type="text"
+      <textarea
         value={value}
         onChange={(e) => {
           setValue(e.target.value);
           setDirty(true);
         }}
         onBlur={() => dirty && save(value)}
-        className={inputClass}
+        rows={2}
+        className={`${inputClass} resize-y whitespace-pre-wrap`}
       />
     );
   } else if (tipo === 'data') {
@@ -97,6 +124,10 @@ export function TarefaCell({
       </select>
     );
   } else if (tipo === 'responsavel') {
+    // Usuário inativo não pode ser escolhido daqui pra frente, mas se já era
+    // o valor salvo continua aparecendo (marcado) — mesmo tratamento dado às
+    // opções desativadas de lista_opcoes/status logo abaixo.
+    const opcoesExibidas = profiles.filter((p) => p.status === 'ativo' || p.id === value);
     field = (
       <select
         value={value}
@@ -107,19 +138,73 @@ export function TarefaCell({
         className={inputClass}
       >
         <option value=""></option>
-        {profiles.map((p) => (
+        {opcoesExibidas.map((p) => (
           <option key={p.id} value={p.id}>
             {p.nome || p.email}
+            {p.status === 'inativo' ? ' (inativo)' : ''}
           </option>
         ))}
       </select>
+    );
+  } else if (tipo === 'checklist') {
+    field = (
+      <ChecklistEstadoPicker
+        value={value}
+        onSelect={(novoValor) => {
+          setValue(novoValor);
+          save(novoValor);
+        }}
+      />
+    );
+  } else if (tipo === 'campo_cliente') {
+    const valor = campoClienteValor ?? '';
+    const sensivel = campoClienteAlvo ? CAMPOS_CLIENTE_RESTRITOS.includes(campoClienteAlvo) : false;
+    field = valor ? (
+      <div className="flex items-center gap-2">
+        <span className="text-sm">{sensivel && !campoVisivel ? '••••••' : valor}</span>
+        <div className="flex flex-col items-start">
+          {sensivel ? (
+            <button
+              type="button"
+              onClick={() => setCampoVisivel((v) => !v)}
+              className="text-xs text-muted hover:underline"
+            >
+              {campoVisivel ? 'Esconder' : 'Mostrar'}
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => copiar(valor)}
+            className="text-xs text-muted hover:underline"
+          >
+            {copiado ? 'Copiado!' : 'Copiar'}
+          </button>
+        </div>
+      </div>
+    ) : (
+      <span className="text-sm text-muted">—</span>
+    );
+  } else if (tipo === 'link') {
+    const Icon = LINK_ICONES[linkIcone ?? 'link'].Icon;
+    field = linkUrl ? (
+      <a
+        href={normalizarUrl(linkUrl)}
+        target="_blank"
+        rel="noreferrer"
+        title={linkUrl}
+        className="inline-flex text-muted hover:text-primary"
+      >
+        <Icon size={18} />
+      </a>
+    ) : (
+      <span className="text-sm text-muted">—</span>
     );
   } else {
     field = null;
   }
 
   return (
-    <div className="flex items-center gap-1">
+    <div className={`flex gap-1 ${tipo === 'texto' ? 'items-start' : 'items-center'}`}>
       {field}
       {isPending ? <span className="text-xs text-muted">…</span> : null}
       {error ? <span className="text-xs text-status-inactive">{error}</span> : null}

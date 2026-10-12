@@ -10,6 +10,16 @@ export type FormState = {
   error: string | null;
 };
 
+export type ResetSenhaFormState = {
+  error: string | null;
+  sucesso?: boolean;
+};
+
+export type EditarEmailFormState = {
+  error: string | null;
+  sucesso?: boolean;
+};
+
 async function requireAdmin() {
   const profile = await getCurrentProfile();
   if (profile?.role !== 'admin') {
@@ -24,6 +34,7 @@ export async function createUsuario(_prevState: FormState, formData: FormData): 
   const email = String(formData.get('email') ?? '').trim();
   const senha = String(formData.get('senha') ?? '');
   const role = String(formData.get('role') ?? 'usuario_final') as Role;
+  const departamentoIds = formData.getAll('departamentos').map(String);
 
   if (!nome || !email) return { error: 'Nome e e-mail são obrigatórios.' };
   if (senha.length < 8) return { error: 'A senha deve ter pelo menos 8 caracteres.' };
@@ -40,9 +51,19 @@ export async function createUsuario(_prevState: FormState, formData: FormData): 
     return { error: error.message };
   }
 
+  const supabase = await createClient();
+
   if (role !== 'usuario_final') {
-    const supabase = await createClient();
     await supabase.from('profiles').update({ role }).eq('id', data.user.id);
+  }
+
+  if (role !== 'admin' && departamentoIds.length > 0) {
+    await supabase.from('permissoes').insert(
+      departamentoIds.map((departamentoId) => ({
+        usuario_id: data.user.id,
+        departamento_id: departamentoId,
+      })),
+    );
   }
 
   revalidatePath('/usuarios');
@@ -58,11 +79,13 @@ export async function updateUsuario(
 
   const nome = String(formData.get('nome') ?? '').trim();
   const role = String(formData.get('role') ?? 'usuario_final') as Role;
+  const departamentoIds = formData.getAll('departamentos').map(String);
 
   if (!nome) return { error: 'Informe o nome.' };
 
+  const supabase = await createClient();
+
   if (role !== 'admin') {
-    const supabase = await createClient();
     const { data: alvo } = await supabase.from('profiles').select('role').eq('id', id).single();
     if (alvo?.role === 'admin') {
       const { count } = await supabase
@@ -76,12 +99,85 @@ export async function updateUsuario(
     }
   }
 
-  const supabase = await createClient();
   const { error } = await supabase.from('profiles').update({ nome, role }).eq('id', id);
   if (error) return { error: error.message };
 
+  // Sincroniza os departamentos/subdepartamentos vinculados — migrar alguém
+  // de departamento é só desmarcar um e marcar outro aqui, num passo só, sem
+  // precisar passar pela tela de Permissões à parte.
+  if (role === 'admin') {
+    await supabase.from('permissoes').delete().eq('usuario_id', id);
+  } else {
+    const { data: atuais } = await supabase
+      .from('permissoes')
+      .select('departamento_id')
+      .eq('usuario_id', id);
+    const idsAtuais = new Set((atuais ?? []).map((p) => p.departamento_id));
+    const idsNovos = new Set(departamentoIds);
+
+    const paraRemover = [...idsAtuais].filter((d) => !idsNovos.has(d));
+    const paraAdicionar = [...idsNovos].filter((d) => !idsAtuais.has(d));
+
+    if (paraRemover.length > 0) {
+      await supabase
+        .from('permissoes')
+        .delete()
+        .eq('usuario_id', id)
+        .in('departamento_id', paraRemover);
+    }
+    if (paraAdicionar.length > 0) {
+      await supabase
+        .from('permissoes')
+        .insert(paraAdicionar.map((departamentoId) => ({ usuario_id: id, departamento_id: departamentoId })));
+    }
+  }
+
   revalidatePath('/usuarios');
   redirect('/usuarios');
+}
+
+export async function resetUsuarioSenha(
+  id: string,
+  _prevState: ResetSenhaFormState,
+  formData: FormData,
+): Promise<ResetSenhaFormState> {
+  await requireAdmin();
+
+  const novaSenha = String(formData.get('senha') ?? '');
+  if (novaSenha.length < 8) return { error: 'A senha deve ter pelo menos 8 caracteres.' };
+
+  const adminClient = createAdminClient();
+  const { error } = await adminClient.auth.admin.updateUserById(id, { password: novaSenha });
+  if (error) return { error: error.message };
+
+  return { error: null, sucesso: true };
+}
+
+// Corrige erro de digitação no e-mail (login é feito por e-mail no
+// Supabase Auth, então precisa atualizar tanto auth.users quanto o espelho
+// em profiles.email, que não é sincronizado automaticamente após o
+// cadastro — só na criação, via trigger).
+export async function updateUsuarioEmail(
+  id: string,
+  _prevState: EditarEmailFormState,
+  formData: FormData,
+): Promise<EditarEmailFormState> {
+  await requireAdmin();
+
+  const email = String(formData.get('email') ?? '').trim();
+  if (!email) return { error: 'Informe o e-mail.' };
+
+  const adminClient = createAdminClient();
+  const { error: authError } = await adminClient.auth.admin.updateUserById(id, { email });
+  if (authError) return { error: authError.message };
+
+  const supabase = await createClient();
+  const { error } = await supabase.from('profiles').update({ email }).eq('id', id);
+  if (error) return { error: error.message };
+
+  revalidatePath(`/usuarios/${id}/editar`);
+  revalidatePath('/usuarios');
+  return { error: null, sucesso: true };
 }
 
 export async function setUsuarioStatus(id: string, status: 'ativo' | 'inativo') {

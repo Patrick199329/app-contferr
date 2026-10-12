@@ -43,5 +43,13 @@ next-env.d.ts
 # claude code local runtime state
 .claude/
 
+# workaround local pra disco cheio no C: — específico desta máquina, não deve
+# ir pro repo (força um path de cache que não existe em outro ambiente)
+.npmrc
+
 # material de referência visual (não é parte do produto)
 UX estudo/
+
+# credenciais anotadas localmente pra facilitar acesso — nunca deve ir pro repo
+acessos.txt
+*.log

@@ -24,6 +24,16 @@
   --status-active: #1a9c86;
   --status-inactive: #b3261e;
 
+  /* Visual padrão do cabeçalho (vidro translúcido) — usado quando o admin
+     não personalizou --header-bg em Painel Administrativo > Aparência. */
+  --header-bg-default: color-mix(in srgb, var(--surface) 70%, transparent);
+
+  /* Cabeçalho das tabelas (th) — escuro por padrão pra destacar do resto da
+     tabela; personalizável em Painel Administrativo > Aparência
+     (--table-header-bg/foreground sobrescritos ali quando configurado). */
+  --table-header-bg: #1f1d1a;
+  --table-header-foreground: #f5f4f1;
+
   --gradient-bg:
     radial-gradient(
       ellipse 80% 60% at 15% 0%,
@@ -86,6 +96,8 @@
     --tint-lavender-icon: #a79bf5;
     --tint-mint-bg: #1c332f;
     --tint-mint-icon: #2fd6bb;
+
+    --header-bg-default: color-mix(in srgb, var(--surface) 60%, transparent);
   }
 }
 
@@ -105,11 +117,23 @@ body {
   }
 
   .app-glass {
-    @apply border-white/60 bg-surface/70 backdrop-blur-xl dark:border-white/10 dark:bg-surface/60;
+    @apply border-white/60 backdrop-blur-xl dark:border-white/10;
+    background: var(--header-bg, var(--header-bg-default));
+    color: var(--header-foreground, var(--foreground));
   }
 
   .app-table th {
-    @apply px-4 py-3 text-left text-xs font-medium text-muted uppercase;
+    @apply px-4 py-3 text-left text-xs font-semibold uppercase;
+    /* Sem isso, o cabeçalho força a coluna inteira a caber numa linha só
+       (nomes longos como "Antecipação de ICMS ST" esticam a tabela toda) —
+       o max-width limita a largura só do texto do cabeçalho, deixando a
+       coluna em si livre pra ficar tão larga quanto o conteúdo das células
+       pedir. */
+    white-space: normal;
+    max-width: 140px;
+    vertical-align: bottom;
+    background: var(--table-header-bg);
+    color: var(--table-header-foreground);
   }
 
   .app-table td {
@@ -118,5 +142,17 @@ body {
 
   .app-table tr + tr td {
     @apply border-t border-border;
+  }
+
+  /* Esconde a barra de rolagem horizontal nativa de um container — usado
+     junto com StickyScrollbar (components/sticky-scrollbar.tsx), que já
+     oferece uma barra equivalente grudada no rodapé da tela; sem isso, as
+     duas apareciam empilhadas no fim da tabela. */
+  .scrollbar-hidden {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-hidden::-webkit-scrollbar {
+    display: none;
   }
 }

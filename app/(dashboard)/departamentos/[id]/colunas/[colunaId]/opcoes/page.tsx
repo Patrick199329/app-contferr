@@ -1,5 +1,14 @@
 import { notFound, redirect } from 'next/navigation';
-import { createOpcao, moveOpcao, setOpcaoStatus } from '@/app/(dashboard)/departamentos/actions';
+import {
+  createOpcao,
+  deleteOpcao,
+  moveOpcao,
+  setOpcaoStatus,
+  updateOpcao,
+} from '@/app/(dashboard)/departamentos/actions';
+import { Breadcrumbs } from '@/components/breadcrumbs';
+import { ConfirmFormButton } from '@/components/confirm-form-button';
+import { OpcaoEditar } from '@/components/opcao-editar';
 import { SimpleTextForm } from '@/components/simple-text-form';
 import { Badge } from '@/components/ui/badge';
 import { getCurrentProfile } from '@/lib/supabase/profile';
@@ -8,15 +17,17 @@ import { COLUNA_TIPOS_COM_OPCOES, type Coluna, type OpcaoColuna } from '@/types/
 
 type OpcoesPageProps = {
   params: Promise<{ id: string; colunaId: string }>;
+  searchParams: Promise<{ erro?: string }>;
 };
 
-export default async function OpcoesPage({ params }: OpcoesPageProps) {
+export default async function OpcoesPage({ params, searchParams }: OpcoesPageProps) {
   const profile = await getCurrentProfile();
   if (profile?.role !== 'admin') {
     redirect('/departamentos');
   }
 
   const { id: departamentoId, colunaId } = await params;
+  const { erro } = await searchParams;
   const supabase = await createClient();
 
   const { data: coluna } = await supabase
@@ -29,6 +40,12 @@ export default async function OpcoesPage({ params }: OpcoesPageProps) {
     notFound();
   }
 
+  const { data: departamento } = await supabase
+    .from('departamentos')
+    .select('nome')
+    .eq('id', departamentoId)
+    .single();
+
   const { data: opcoes } = await supabase
     .from('opcoes_coluna')
     .select('*')
@@ -39,8 +56,26 @@ export default async function OpcoesPage({ params }: OpcoesPageProps) {
 
   const opcoesAtivas = (opcoes ?? []).filter((o) => o.status === 'ativo');
 
+  // Valor é gravado por texto na tarefa (não por id da opção) — só pode
+  // excluir de verdade se nenhuma tarefa tiver esse texto exato gravado
+  // nessa coluna.
+  const { data: tarefasDoDepartamento } = await supabase
+    .from('tarefas')
+    .select('valores')
+    .eq('departamento_id', departamentoId);
+  const valoresUsados = new Set(
+    (tarefasDoDepartamento ?? []).map((t) => t.valores?.[colunaId]).filter(Boolean),
+  );
+
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-8">
+      <Breadcrumbs
+        items={[
+          { label: 'Departamentos', href: '/departamentos' },
+          { label: departamento?.nome ?? 'Departamento', href: `/departamentos/${departamentoId}` },
+          { label: `Opções — ${coluna.nome}` },
+        ]}
+      />
       <div>
         <h1 className="text-xl font-semibold">Opções — {coluna.nome}</h1>
         <p className="text-sm text-muted">
@@ -49,15 +84,19 @@ export default async function OpcoesPage({ params }: OpcoesPageProps) {
         </p>
       </div>
 
+      {erro ? <p className="text-sm text-status-inactive">{erro}</p> : null}
+
       <ul className="app-card flex flex-col divide-y divide-border">
         {(opcoes ?? []).map((opcao) => {
           const index = opcoesAtivas.findIndex((o) => o.id === opcao.id);
+          const semMovimentacao = !valoresUsados.has(opcao.valor);
           return (
-            <li key={opcao.id} className="flex items-center justify-between p-4">
-              <span className="flex items-center gap-2">
-                {opcao.valor}
-                {opcao.status === 'inativo' ? <Badge tone="inactive">inativa</Badge> : null}
-              </span>
+            <li key={opcao.id} className="flex flex-wrap items-center justify-between gap-2 p-4">
+              <OpcaoEditar
+                valor={opcao.valor}
+                badge={opcao.status === 'inativo' ? <Badge tone="inactive">inativa</Badge> : null}
+                action={updateOpcao.bind(null, departamentoId, colunaId, opcao.id)}
+              />
               <div className="flex items-center gap-3">
                 {opcao.status === 'ativo' ? (
                   <>
@@ -94,6 +133,15 @@ export default async function OpcoesPage({ params }: OpcoesPageProps) {
                     {opcao.status === 'ativo' ? 'Desativar' : 'Reativar'}
                   </button>
                 </form>
+                {semMovimentacao ? (
+                  <ConfirmFormButton
+                    action={deleteOpcao.bind(null, departamentoId, colunaId, opcao.id)}
+                    confirmMessage={`Excluir a opção "${opcao.valor}"? Ela nunca foi usada em nenhuma tarefa. Essa ação não pode ser desfeita.`}
+                    className="text-sm text-status-inactive hover:underline"
+                  >
+                    Excluir
+                  </ConfirmFormButton>
+                ) : null}
               </div>
             </li>
           );

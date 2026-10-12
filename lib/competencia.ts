@@ -5,23 +5,24 @@ export function currentCompetencia(): string {
   return `${now.getFullYear()}-${mes}-01`;
 }
 
+export const NOMES_MESES = [
+  'Janeiro',
+  'Fevereiro',
+  'Março',
+  'Abril',
+  'Maio',
+  'Junho',
+  'Julho',
+  'Agosto',
+  'Setembro',
+  'Outubro',
+  'Novembro',
+  'Dezembro',
+];
+
 export function formatCompetencia(competencia: string): string {
   const [ano, mes] = competencia.split('-');
-  const nomes = [
-    'Janeiro',
-    'Fevereiro',
-    'Março',
-    'Abril',
-    'Maio',
-    'Junho',
-    'Julho',
-    'Agosto',
-    'Setembro',
-    'Outubro',
-    'Novembro',
-    'Dezembro',
-  ];
-  return `${nomes[Number(mes) - 1]}/${ano}`;
+  return `${NOMES_MESES[Number(mes) - 1]}/${ano}`;
 }
 
 export function shiftCompetencia(competencia: string, deltaMeses: number): string {

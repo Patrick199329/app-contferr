@@ -1,17 +1,24 @@
+import { DesenvolvidoPor } from '@/components/desenvolvido-por';
 import { LoginForm } from '@/components/login-form';
+import { Logo } from '@/components/logo';
+import { getConfiguracaoMarca } from '@/lib/supabase/branding';
 
-export default function LoginPage() {
+type LoginPageProps = {
+  searchParams: Promise<{ erro?: string }>;
+};
+
+export default async function LoginPage({ searchParams }: LoginPageProps) {
+  const { erro } = await searchParams;
+  const config = await getConfiguracaoMarca();
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-8 p-8">
-      <div className="flex items-center gap-2">
-        <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-accent text-lg font-bold text-accent-foreground">
-          C
-        </span>
-        <span className="text-xl font-semibold">Contferr</span>
-      </div>
-      <div className="app-card w-full max-w-sm p-8">
+      <Logo logoUrl={config.logo_login_url ?? config.logo_url} size="md" />
+      <div className="app-card flex w-full max-w-sm flex-col gap-4 p-8">
+        {erro ? <p className="text-sm text-status-inactive">{erro}</p> : null}
         <LoginForm />
       </div>
+      <DesenvolvidoPor />
     </main>
   );
 }

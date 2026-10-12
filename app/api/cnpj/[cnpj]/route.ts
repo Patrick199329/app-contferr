@@ -1,13 +1,16 @@
 import { NextResponse } from 'next/server';
 import { CnpjLookupError, fetchCnpjData, isValidCnpj, type CnpjLookupResult } from '@/lib/cnpj';
-import { getCurrentProfile } from '@/lib/supabase/profile';
+import { getCurrentProfile, podeGerenciarClientes } from '@/lib/supabase/profile';
 
 const CACHE_TTL_MS = 10 * 60 * 1000;
 const cache = new Map<string, { data: CnpjLookupResult; expiresAt: number }>();
 
 export async function GET(_req: Request, ctx: RouteContext<'/api/cnpj/[cnpj]'>) {
   const profile = await getCurrentProfile();
-  if (profile?.role !== 'admin') {
+  // Gerente também cria/edita cliente (ver RLS "Gerentes can create
+  // clientes") — restringir a busca só a admin deixava o Gerente sem
+  // autopreenchimento por engano.
+  if (!podeGerenciarClientes(profile)) {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
   }
 

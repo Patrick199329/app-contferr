@@ -1,6 +1,9 @@
 import { redirect } from 'next/navigation';
-import { SimpleTextForm } from '@/components/simple-text-form';
+import { Breadcrumbs } from '@/components/breadcrumbs';
+import { DepartamentoForm } from '@/components/departamento-form';
 import { getCurrentProfile } from '@/lib/supabase/profile';
+import { createClient } from '@/lib/supabase/server';
+import type { Departamento } from '@/types/departamento';
 import { createDepartamento } from '../actions';
 
 export default async function NovoDepartamentoPage() {
@@ -9,16 +12,20 @@ export default async function NovoDepartamentoPage() {
     redirect('/departamentos');
   }
 
+  const supabase = await createClient();
+  const { data: departamentosPai } = await supabase
+    .from('departamentos')
+    .select('*')
+    .is('parent_id', null)
+    .order('nome')
+    .returns<Departamento[]>();
+
   return (
     <div className="mx-auto flex max-w-md flex-col gap-6">
+      <Breadcrumbs items={[{ label: 'Departamentos', href: '/departamentos' }, { label: 'Novo departamento' }]} />
       <h1 className="text-xl font-semibold">Novo departamento</h1>
       <div className="app-card p-6">
-        <SimpleTextForm
-          action={createDepartamento}
-          fieldName="nome"
-          label="Nome do departamento"
-          submitLabel="Criar departamento"
-        />
+        <DepartamentoForm action={createDepartamento} departamentosPai={departamentosPai ?? []} />
       </div>
     </div>
   );

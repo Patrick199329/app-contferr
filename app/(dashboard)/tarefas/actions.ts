@@ -1,5 +1,7 @@
 'use server';
 
+import { currentCompetencia, shiftCompetencia } from '@/lib/competencia';
+import { getConfiguracoesSistema } from '@/lib/supabase/configuracoes-sistema';
 import { getCurrentProfile } from '@/lib/supabase/profile';
 import { createClient } from '@/lib/supabase/server';
 
@@ -13,6 +15,15 @@ export async function updateTarefaValor(
   const profile = await getCurrentProfile();
   if (!profile) {
     throw new Error('Não autorizado.');
+  }
+
+  // Reforça no servidor o limite configurado em Configurações — a interface
+  // já não deixa navegar pra fora dessa janela, mas isso não pode depender
+  // só do que a tela mostra.
+  const { tarefas_meses_edicao_retroativa: mesesRetroativos } = await getConfiguracoesSistema();
+  const competenciaMinima = shiftCompetencia(currentCompetencia(), -mesesRetroativos);
+  if (competencia < competenciaMinima || competencia > currentCompetencia()) {
+    throw new Error('Esta competência está fora da janela de edição permitida.');
   }
 
   const supabase = await createClient();

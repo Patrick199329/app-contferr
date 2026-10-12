@@ -18,3 +18,19 @@ export async function forcarVirada() {
 
   revalidatePath('/admin/virada');
 }
+
+export async function forcarViradaParcelamentos() {
+  const profile = await getCurrentProfile();
+  if (profile?.role !== 'admin') {
+    throw new Error('Não autorizado.');
+  }
+
+  const supabase = await createClient();
+  await supabase.rpc('executar_virada_parcelamentos', {
+    p_competencia: null,
+    p_executado_por: profile.id,
+  });
+
+  revalidatePath('/admin/virada');
+  revalidatePath('/parcelamentos');
+}

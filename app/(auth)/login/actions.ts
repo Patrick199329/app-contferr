@@ -33,11 +33,16 @@ export async function login(_prevState: LoginState, formData: FormData): Promise
     return { error: 'Este usuário foi desativado. Fale com o Administrador.' };
   }
 
+  await supabase.rpc('registrar_evento_sessao', { p_tipo: 'login' });
+
   redirect('/dashboard');
 }
 
 export async function logout() {
   const supabase = await createClient();
+  // Precisa rodar antes do signOut — depois disso auth.uid() não resolve
+  // mais, e a função que grava o evento não saberia de quem é a saída.
+  await supabase.rpc('registrar_evento_sessao', { p_tipo: 'logout' });
   await supabase.auth.signOut();
   redirect('/login');
 }

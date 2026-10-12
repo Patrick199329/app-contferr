@@ -1,9 +1,11 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useState } from 'react';
 import type { FormState } from '@/app/(dashboard)/usuarios/actions';
+import { DepartamentosPicker } from '@/components/departamentos-picker';
 import { Button } from '@/components/ui/button';
 import type { Role } from '@/lib/supabase/profile';
+import type { Departamento } from '@/types/departamento';
 
 type UsuarioFormProps = {
   action: (prevState: FormState, formData: FormData) => Promise<FormState>;
@@ -12,14 +14,23 @@ type UsuarioFormProps = {
     nome: string;
     email: string;
     role: Role;
+    departamentoIds?: string[];
   };
+  departamentos?: Departamento[];
   submitLabel: string;
 };
 
 const initialState: FormState = { error: null };
 
-export function UsuarioForm({ action, mode, initialValues, submitLabel }: UsuarioFormProps) {
+export function UsuarioForm({
+  action,
+  mode,
+  initialValues,
+  departamentos,
+  submitLabel,
+}: UsuarioFormProps) {
   const [state, formAction, pending] = useActionState(action, initialState);
+  const [role, setRole] = useState<Role>(initialValues?.role ?? 'usuario_final');
 
   return (
     <form action={formAction} className="flex w-full max-w-md flex-col gap-4">
@@ -59,12 +70,7 @@ export function UsuarioForm({ action, mode, initialValues, submitLabel }: Usuari
             />
           </div>
         </>
-      ) : (
-        <div className="flex flex-col gap-1">
-          <span className="text-sm font-medium">E-mail</span>
-          <span className="text-sm text-muted">{initialValues?.email}</span>
-        </div>
-      )}
+      ) : null}
 
       <div className="flex flex-col gap-1">
         <label htmlFor="role" className="text-sm font-medium">
@@ -73,7 +79,8 @@ export function UsuarioForm({ action, mode, initialValues, submitLabel }: Usuari
         <select
           id="role"
           name="role"
-          defaultValue={initialValues?.role ?? 'usuario_final'}
+          value={role}
+          onChange={(e) => setRole(e.target.value as Role)}
           className="input"
         >
           <option value="usuario_final">Usuário Final</option>
@@ -81,6 +88,13 @@ export function UsuarioForm({ action, mode, initialValues, submitLabel }: Usuari
           <option value="admin">Administrador</option>
         </select>
       </div>
+
+      {role !== 'admin' ? (
+        <DepartamentosPicker
+          departamentos={departamentos ?? []}
+          defaultSelected={initialValues?.departamentoIds ?? []}
+        />
+      ) : null}
 
       {state.error ? <p className="text-sm text-status-inactive">{state.error}</p> : null}
 

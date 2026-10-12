@@ -1,0 +1,35 @@
+name: Backup diário
+
+on:
+  schedule:
+    # 06:00 em Brasília (UTC-3) = 09:00 UTC.
+    - cron: '0 9 * * *'
+  workflow_dispatch: {}
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Instala o cliente do Postgres (pg_dump)
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Instala as dependências do script de backup
+        run: npm install --no-save @supabase/supabase-js googleapis jszip
+
+      - name: Roda o backup
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          GOOGLE_DRIVE_FOLDER_ID: ${{ secrets.GOOGLE_DRIVE_FOLDER_ID }}
+          BACKUP_RETENCAO_DIAS: '30'
+          DISPARADO_MANUALMENTE: ${{ github.event_name == 'workflow_dispatch' && 'true' || 'false' }}
+        run: node scripts/backup-diario.mjs

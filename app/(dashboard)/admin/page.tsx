@@ -1,4 +1,4 @@
-import { Building2, RefreshCw, UserCog } from 'lucide-react';
+import { Building2, Paintbrush, Repeat, RefreshCw, Settings, Upload, UserCog } from 'lucide-react';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getCurrentProfile } from '@/lib/supabase/profile';
@@ -25,6 +25,34 @@ const SECOES = [
     icon: RefreshCw,
     tint: 'mint' as const,
   },
+  {
+    href: '/admin/recorrencias',
+    label: 'Recorrência de Tarefas',
+    desc: 'Acompanhar e forçar a geração de tarefas recorrentes do Quadro.',
+    icon: Repeat,
+    tint: 'peach' as const,
+  },
+  {
+    href: '/admin/aparencia',
+    label: 'Aparência',
+    desc: 'Cor do cabeçalho, cor do menu selecionado, logo e favicon.',
+    icon: Paintbrush,
+    tint: 'lavender' as const,
+  },
+  {
+    href: '/admin/importar-clientes',
+    label: 'Importar clientes',
+    desc: 'Cadastrar vários clientes de uma vez a partir de uma planilha.',
+    icon: Upload,
+    tint: 'mint' as const,
+  },
+  {
+    href: '/admin/configuracoes',
+    label: 'Configurações',
+    desc: 'Regras gerais do sistema — ex.: até quantos meses atrás a Tabela de Tarefas edita.',
+    icon: Settings,
+    tint: 'peach' as const,
+  },
 ];
 
 const TINT_BG = {
@@ -49,7 +77,7 @@ export default async function AdminPage() {
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-6">
       <h1 className="text-xl font-semibold">Painel Administrativo</h1>
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {SECOES.map((secao) => {
           const Icon = secao.icon;
           return (

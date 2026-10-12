@@ -1,4 +1,4 @@
-import type { Coluna } from '@/types/departamento';
+import { CHECKLIST_ESTADO_LABELS, type ChecklistEstado, type Coluna } from '@/types/departamento';
 
 // Converte o valor bruto salvo em `tarefas.valores` para texto exibível,
 // resolvendo o id do responsável para nome/e-mail e formatando datas.
@@ -15,6 +15,9 @@ export function resolveDisplayValue(
   if (tipo === 'data') {
     const [ano, mes, dia] = valor.split('-');
     return ano && mes && dia ? `${dia}/${mes}/${ano}` : valor;
+  }
+  if (tipo === 'checklist') {
+    return CHECKLIST_ESTADO_LABELS[valor as ChecklistEstado] ?? valor;
   }
   return valor;
 }

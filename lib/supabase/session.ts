@@ -49,6 +49,8 @@ export async function updateSession(request: NextRequest) {
     if (!isPublicRoute) {
       const url = request.nextUrl.clone();
       url.pathname = '/login';
+      url.search = '';
+      url.searchParams.set('erro', 'Este usuário foi desativado. Fale com o Administrador.');
       return NextResponse.redirect(url);
     }
     return supabaseResponse;
