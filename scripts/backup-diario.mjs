@@ -216,6 +216,14 @@ async function main() {
       '--no-owner',
       '--no-privileges',
       '--inserts',
+      // Tabelas internas do GoTrue (o serviço de auth do Supabase) —
+      // controladas pela própria plataforma, nem graváveis pelo usuário
+      // "postgres" num projeto novo (erro de permissão ao restaurar), e
+      // não fazem falta: o que importa (usuários, identidades, sessões)
+      // está nas demais tabelas de auth.
+      '--exclude-table=auth.schema_migrations',
+      '--exclude-table=auth.audit_log_entries',
+      '--exclude-table=auth.flow_state',
     ]);
     rodarPgDump(path.join(pastaTmp, 'banco-storage.sql'), [
       '--schema=storage',
@@ -223,6 +231,8 @@ async function main() {
       '--no-owner',
       '--no-privileges',
       '--inserts',
+      // Mesmo motivo do auth.schema_migrations acima.
+      '--exclude-table=storage.migrations',
     ]);
 
     console.log('Baixando arquivos do Storage…');
