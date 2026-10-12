@@ -17,8 +17,17 @@ jobs:
         with:
           node-version: 22
 
-      - name: Instala o cliente do Postgres (pg_dump)
-        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Instala o cliente do Postgres 17 (pg_dump)
+        # O repositório padrão do Ubuntu só tem o postgresql-client 16, mas o
+        # Supabase roda Postgres 17 — pg_dump recusa fazer dump de um
+        # servidor mais novo que ele mesmo. Usa o repositório oficial do
+        # PostgreSQL pra instalar a versão certa.
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc --fail https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          sudo sh -c 'echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(. /etc/os-release && echo $VERSION_CODENAME)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-17
 
       - name: Instala as dependências do script de backup
         run: npm install --no-save @supabase/supabase-js googleapis jszip
