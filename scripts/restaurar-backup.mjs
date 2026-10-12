@@ -52,9 +52,17 @@ async function restaurarSql(client, caminhoSql, rotulo) {
   const sqlBruto = await readFile(caminhoSql, 'utf8');
   // \restrict / \unrestrict são comandos do psql (proteção contra execução
   // parcial), não SQL — um client de Postgres comum não entende e falha.
+  // "CREATE SCHEMA public;" também sempre falha: todo banco Postgres já
+  // nasce com esse schema, não tem como recriar — só precisamos das
+  // tabelas de dentro dele, o schema em si já está lá.
   const sql = sqlBruto
     .split('\n')
-    .filter((linha) => !linha.startsWith('\\restrict') && !linha.startsWith('\\unrestrict'))
+    .filter(
+      (linha) =>
+        !linha.startsWith('\\restrict') &&
+        !linha.startsWith('\\unrestrict') &&
+        linha.trim() !== 'CREATE SCHEMA public;',
+    )
     .join('\n');
   await client.query(sql);
   console.log(`${rotulo} restaurado.`);
